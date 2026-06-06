@@ -1,0 +1,55 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Default deny catch-all
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // Helper functions
+    function isValidId(id) {
+      return id is string && id.size() <= 64 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    function isValidSharedPhoto(data) {
+      return data.id is string 
+        && data.id.size() <= 64
+        && data.spotId is string 
+        && data.spotId.size() <= 64
+        && data.photoData is string 
+        && data.photoData.size() <= 300000
+        && data.uploadedAt is timestamp
+        && data.keys().hasAll(['id', 'spotId', 'photoData', 'uploadedAt'])
+        && data.keys().size() == 4;
+    }
+
+    // Shared Photos Rules
+    match /shared_photos/{photoId} {
+      allow get: if true;
+      allow list: if true;
+      
+      allow create: if isValidId(photoId) 
+        && incoming().id == photoId 
+        && incoming().spotId == photoId 
+        && isValidSharedPhoto(incoming())
+        && incoming().uploadedAt == request.time;
+        
+      allow update: if isValidId(photoId) 
+        && incoming().id == existing().id
+        && incoming().spotId == existing().spotId
+        && isValidSharedPhoto(incoming())
+        && incoming().uploadedAt == request.time;
+        
+      allow delete: if isValidId(photoId);
+    }
+  }
+}

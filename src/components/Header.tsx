@@ -16,7 +16,7 @@ export default function Header() {
         <div>
           <div className="flex items-center gap-1.5">
             <h1 className="text-xl font-bold tracking-tight text-fuji-dark">
-              澎湖・均跟豪❤❤❤❤❤❤ 
+              澎湖・均跟豪 
             </h1>
             <Sparkles className="w-4 h-4 text-coral shrink-0" />
           </div>
@@ -33,6 +33,13 @@ export default function Header() {
         <span className="text-[10px] text-tea text-opacity-85 mt-2 block font-mono">
           2026.06.06 - 06.09
         </span>
+        <div className="flex items-center gap-1.5 text-[10px] bg-emerald-50 text-emerald-600 px-2 py-0.5 rounded-full border border-emerald-200 shadow-xs select-none w-fit ml-auto mt-1">
+          <span className="relative flex h-1.5 w-1.5">
+            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+            <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-emerald-500"></span>
+          </span>
+          <span>雲端同步</span>
+        </div>
       </div>
     </header>
   );

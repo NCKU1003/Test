@@ -1,0 +1,35 @@
+{
+  "entities": {
+    "shared_photos": {
+      "title": "SharedPhoto",
+      "description": "Uploaded travel photos shared with everyone in the cloud",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique document ID (same as spotId)"
+        },
+        "spotId": {
+          "type": "string",
+          "description": "The tourist spot ID this photo belongs to"
+        },
+        "photoData": {
+          "type": "string",
+          "description": "The base64-encoded, compressed image data"
+        },
+        "uploadedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Timestamp when the photo was uploaded"
+        }
+      },
+      "required": ["id", "spotId", "photoData", "uploadedAt"]
+    }
+  },
+  "firestore": {
+    "/shared_photos/{photoId}": {
+      "schema": "shared_photos",
+      "description": "Shared travel memories collection, keyed by spotId"
+    }
+  }
+}
