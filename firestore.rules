@@ -78,10 +78,11 @@ service cloud.firestore {
         && (!('desc' in data) || (data.desc is string && data.desc.size() <= 1000))
         && data.checked is bool
         && (!('tag' in data) || (data.tag is string && data.tag.size() <= 64))
-        && (!('link' in data) || (data.link is string && data.link.size() <= 1000))
-        && data.createdAt is timestamp
-        && data.keys().hasAll(['id', 'categoryId', 'name', 'checked', 'createdAt'])
-        && data.keys().size() >= 5 && data.keys().size() <= 9;
+        && (!('link' in data) || (data.link is string && data.link.size() <= 2000))
+        && (!('screenshot' in data) || (data.screenshot is string && data.screenshot.size() <= 1048576))
+        && (!('createdAt' in data) || data.createdAt is timestamp)
+        && data.keys().hasAll(['id', 'categoryId', 'name', 'checked'])
+        && data.keys().size() >= 4 && data.keys().size() <= 10;
     }
 
     // Shared Photos Rules
@@ -152,7 +153,7 @@ service cloud.firestore {
       allow create: if isValidId(itemId)
         && incoming().id == itemId
         && isValidGuideItem(incoming())
-        && incoming().createdAt == request.time;
+        && (!('createdAt' in incoming()) || incoming().createdAt == request.time);
         
       allow update: if isValidId(itemId)
         && incoming().id == existing().id
@@ -160,7 +161,7 @@ service cloud.firestore {
         && (
           incoming().diff(existing()).affectedKeys().hasOnly(['checked'])
           ||
-          incoming().diff(existing()).affectedKeys().hasOnly(['categoryId', 'name', 'desc', 'tag', 'checked'])
+          incoming().diff(existing()).affectedKeys().hasOnly(['categoryId', 'name', 'desc', 'tag', 'checked', 'link', 'screenshot'])
         );
         
       allow delete: if true;
