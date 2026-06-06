@@ -34,8 +34,8 @@ body {
 /* Cute Japanese style wave texture background */
 .wave-texture {
   background-color: #FAF9F6;
-  background-image: radial-gradient(circle at 100% 150%, #FAF9F6 24%, #EAE6E1 24%, #EAE6E1 28%, #FAF9F6 28%, #FAF9F6).35s,
-                    radial-gradient(circle at 0% 150%, #FAF9F6 24%, #EAE6E1 24%, #EAE6E1 28%, #FAF9F6 28%, #FAF9F6).35s,
+  background-image: radial-gradient(circle at 100% 150%, #FAF9F6 24%, #EAE6E1 24%, #EAE6E1 28%, #FAF9F6 28%, #FAF9F6),
+                    radial-gradient(circle at 0% 150%, #FAF9F6 24%, #EAE6E1 24%, #EAE6E1 28%, #FAF9F6 28%, #FAF9F6),
                     radial-gradient(circle at 50%  100%, #EAE6E1 4%, #FAF9F6 4%, #FAF9F6);
   background-size: 16px 16px;
 }
