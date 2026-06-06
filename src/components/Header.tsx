@@ -16,12 +16,12 @@ export default function Header() {
         <div>
           <div className="flex items-center gap-1.5">
             <h1 className="text-xl font-bold tracking-tight text-fuji-dark">
-              澎湖・均跟豪❤ 
+              澎湖・均跟豪❤❤❤❤❤❤ 
             </h1>
             <Sparkles className="w-4 h-4 text-coral shrink-0" />
           </div>
           <p className="text-xs text-tea font-medium mt-0.5 tracking-wider bg-fuji-light px-2 py-0.5 rounded-full inline-block">
-            SUMMER VACATION REST
+            SUMMER VACATION
           </p>
         </div>
       </div>
