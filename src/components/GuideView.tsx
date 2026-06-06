@@ -16,7 +16,6 @@ import {
   Sparkles,
   Info
 } from 'lucide-react';
-import { motion } from 'framer-motion';
 
 export default function GuideView() {
   const [searchQuery, setSearchQuery] = useState('');
@@ -122,12 +121,10 @@ export default function GuideView() {
             const percentCompleted = totalCount > 0 ? Math.round((completedCount / totalCount) * 100) : 0;
 
             return (
-              <motion.div
+              <div
                 key={cat.id}
-                initial={{ opacity: 0, y: 15 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.3, delay: catIdx * 0.08 }}
-                className="bg-white rounded-[24px] border border-tea/10 shadow-sm overflow-hidden"
+                style={{ animationDelay: `${catIdx * 50}ms` }}
+                className="bg-white rounded-[24px] border border-tea/10 shadow-sm overflow-hidden animate-fade-in"
               >
                 {/* Section Header */}
                 <div className="bg-cream/45 px-5 py-4 border-b border-tea/10 flex items-center justify-between">
@@ -205,7 +202,7 @@ export default function GuideView() {
                     </label>
                   ))}
                 </div>
-              </motion.div>
+              </div>
             );
           })
         ) : (

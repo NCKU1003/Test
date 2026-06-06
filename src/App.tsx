@@ -14,7 +14,6 @@ import BottomNav, { TabType } from './components/BottomNav';
 import ItineraryView from './components/ItineraryView';
 import GuideView from './components/GuideView';
 import WeatherView from './components/WeatherView';
-import { AnimatePresence, motion } from 'framer-motion';
 import { Waves } from 'lucide-react';
 
 export default function App() {
@@ -47,20 +46,11 @@ export default function App() {
         {/* Header Section */}
         <Header />
 
-        {/* Content Section with motion route changes */}
+        {/* Content Section with built-in css keyframe changes */}
         <section className="flex-1 overflow-y-auto px-5 py-6 no-scrollbar">
-          <AnimatePresence mode="wait">
-            <motion.div
-              key={activeTab}
-              initial={{ opacity: 0, x: 10 }}
-              animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0, x: -10 }}
-              transition={{ duration: 0.22 }}
-              className="w-full"
-            >
-              {renderActiveView()}
-            </motion.div>
-          </AnimatePresence>
+          <div key={activeTab} className="w-full animate-fade-in">
+            {renderActiveView()}
+          </div>
         </section>
 
         {/* Floating Bottom Nav bar */}

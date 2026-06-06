@@ -16,7 +16,7 @@ export default function Header() {
         <div>
           <div className="flex items-center gap-1.5">
             <h1 className="text-xl font-bold tracking-tight text-fuji-dark">
-              澎湖・菊島夏日散策
+              澎湖・均跟豪❤ 
             </h1>
             <Sparkles className="w-4 h-4 text-coral shrink-0" />
           </div>
@@ -26,8 +26,8 @@ export default function Header() {
         </div>
       </div>
 
-      <div className="text-right">
-        <span className="text-sm font-bold text-coral bg-coral-light border border-coral/20 px-3 py-1.5 rounded-2xl block shadow-sm">
+      <div className="text-right shrink-0">
+        <span className="text-xs sm:text-sm font-bold text-coral bg-coral-light border border-coral/20 px-2 sm:px-3 py-1.5 rounded-2xl block shadow-sm whitespace-nowrap">
           4 Days / 3 Nights
         </span>
         <span className="text-[10px] text-tea text-opacity-85 mt-2 block font-mono">

@@ -22,7 +22,6 @@ import {
   Sparkles,
   Heart
 } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
 
 export default function ItineraryView() {
   const [selectedDay, setSelectedDay] = useState<number>(1);
@@ -154,13 +153,10 @@ export default function ItineraryView() {
           const isExpanded = expandedSpotId === spot.id;
 
           return (
-            <motion.div
-              layout="position"
+            <div
               key={spot.id}
-              initial={{ opacity: 0, y: 15 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.35, delay: index * 0.08 }}
-              className="bg-white rounded-[24px] border border-tea/10 shadow-sm overflow-hidden"
+              style={{ animationDelay: `${index * 50}ms` }}
+              className="bg-white rounded-[24px] border border-tea/10 shadow-sm overflow-hidden animate-fade-in"
             >
               {/* Card Static Section */}
               <div className="p-5 space-y-4">
@@ -301,15 +297,8 @@ export default function ItineraryView() {
               </div>
 
               {/* Collapsed Near Stations Check */}
-              <AnimatePresence>
-                {isExpanded && (
-                  <motion.div
-                    initial={{ height: 0, opacity: 0 }}
-                    animate={{ height: "auto", opacity: 1 }}
-                    exit={{ height: 0, opacity: 0 }}
-                    transition={{ duration: 0.25 }}
-                    className="overflow-hidden border-t border-tea/10 bg-cream/70"
-                  >
+              {isExpanded && (
+                <div className="overflow-hidden border-t border-tea/10 bg-cream/70">
                     <div className="p-5 space-y-4 text-xs">
                       <h4 className="font-bold text-fuji-dark flex items-center gap-1 text-sm">
                         <Waves className="w-4 h-4 text-fuji" />
@@ -335,20 +324,16 @@ export default function ItineraryView() {
                         </div>
                       </div>
                     </div>
-                  </motion.div>
-                )}
-              </AnimatePresence>
-            </motion.div>
+                </div>
+              )}
+            </div>
           );
         })}
       </div>
 
       {/* 🔴 Day Footer Tips Section  */}
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ delay: 0.4 }}
-        className="bg-coral-light/60 border-2 border-coral/15 rounded-[24px] p-5 space-y-4"
+      <div
+        className="bg-coral-light/60 border-2 border-coral/15 rounded-[24px] p-5 space-y-4 animate-fade-in"
       >
         <div className="flex items-center gap-2 border-b border-coral/15 pb-2.5">
           <AlertTriangle className="text-coral w-5 h-5 shrink-0" />
@@ -390,7 +375,7 @@ export default function ItineraryView() {
             </div>
           </div>
         </div>
-      </motion.div>
+      </div>
     </div>
   );
 }

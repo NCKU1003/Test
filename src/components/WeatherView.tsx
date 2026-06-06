@@ -19,7 +19,6 @@ import {
   Eye,
   Info
 } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
 
 export default function WeatherView() {
   const [selectedDayIndex, setSelectedDayIndex] = useState<number>(0);
@@ -63,13 +62,11 @@ export default function WeatherView() {
         </div>
 
         <div className="flex items-center gap-4">
-          <motion.div 
-            animate={{ rotate: [0, 10, 0] }}
-            transition={{ repeat: Infinity, duration: 4, ease: "easeInOut" }}
-            className="text-4xl text-amber-500 bg-amber-50 p-3 rounded-2xl border border-amber-100 shadow-inner"
+          <div 
+            className="text-4xl text-amber-500 bg-amber-50 p-3 rounded-2xl border border-amber-100 shadow-inner transition-transform duration-300 hover:scale-105"
           >
             {selectedWeather.emoji}
-          </motion.div>
+          </div>
           <div>
             <div className="flex items-center gap-2">
               <h2 className="text-xl font-bold text-fuji-dark">澎湖本島即時海候</h2>
@@ -172,18 +169,14 @@ export default function WeatherView() {
           {/* Center pebble gravel pathway */}
           <div className="flex-1 h-full relative flex items-center justify-center">
             {/* Water overlay on path */}
-            <AnimatePresence>
-              {tideLevel <= 5 && (
-                <motion.div 
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 - (tideLevel / 10) }}
-                  exit={{ opacity: 0 }}
-                  className="absolute inset-x-0 inset-y-0 bg-blue-500/50 backdrop-blur-[1px] z-10 flex items-center justify-center text-[10px] font-bold text-white text-center"
-                >
-                  🌊 海水蓋過步道 ({Math.max(0, 150 - tideLevel * 15)} cm)
-                </motion.div>
-              )}
-            </AnimatePresence>
+            {tideLevel <= 5 && (
+              <div 
+                style={{ opacity: 1 - (tideLevel / 10) }}
+                className="absolute inset-x-0 inset-y-0 bg-blue-500/50 backdrop-blur-[1px] z-10 flex items-center justify-center text-[10px] font-bold text-white text-center transition-opacity duration-300"
+              >
+                🌊 海水蓋過步道 ({Math.max(0, 150 - tideLevel * 15)} cm)
+              </div>
+            )}
 
             {/* Pebble Pathway gravel design */}
             <div className="w-full h-8 bg-amber-800/80 border-y-2 border-amber-900 rounded-md flex items-center justify-center text-[9px] font-mono text-amber-200 font-bold z-0 tracking-wider">
