@@ -41,6 +41,7 @@ export default function GuideView() {
   const [newItemDesc, setNewItemDesc] = useState('');
   const [newItemCategory, setNewItemCategory] = useState('essential');
   const [newItemLink, setNewItemLink] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [portalTarget, setPortalTarget] = useState<HTMLElement | null>(null);
 
   useEffect(() => {
@@ -126,8 +127,9 @@ export default function GuideView() {
 
   const handleAddItemSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newItemName.trim()) return;
+    if (!newItemName.trim() || isSubmitting) return;
 
+    setIsSubmitting(true);
     // Alphanumeric id safe for isValidId rules
     const itemId = `guide_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
     try {
@@ -149,6 +151,8 @@ export default function GuideView() {
       setShowAddModal(false);
     } catch (error) {
       handleFirestoreError(error, OperationType.CREATE, `guide_items/${itemId}`);
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -385,102 +389,110 @@ export default function GuideView() {
 
       {/* 💖 Add Item Modal */}
       {showAddModal && portalTarget && createPortal(
-        <div className="absolute inset-0 z-55 flex items-center justify-center p-4 overflow-hidden pointer-events-none">
-          <div className="absolute inset-0 flex items-center justify-center p-4 pointer-events-auto w-full h-full">
-            <div 
-              onClick={() => setShowAddModal(false)}
-              className="absolute inset-0 bg-fuji-dark/45 backdrop-blur-xs transition-opacity"
-            />
-            
-            <div className="relative bg-white rounded-3xl p-5 max-w-sm w-full shadow-2xl border border-tea/10 flex flex-col max-h-[85vh] space-y-4 animate-scale-up z-10">
-              <div className="flex items-center justify-between shrink-0">
-                <h3 className="text-base font-extrabold text-fuji-dark flex items-center gap-1.5">
-                  <Sparkles className="w-4 h-4 text-coral" />
-                  新增旅途重要指南
-                </h3>
-                <button
-                  type="button"
-                  onClick={() => setShowAddModal(false)}
-                  className="p-1 rounded-full hover:bg-tea/5 text-tea/50 transition-colors cursor-pointer"
-                >
-                  <X className="w-4 h-4" />
-                </button>
+        <div className="absolute inset-0 z-55 flex items-start justify-center p-5 pt-[12%] md:pt-[15%] overflow-hidden">
+          {/* Backdrop */}
+          <div 
+            onClick={() => setShowAddModal(false)}
+            className="absolute inset-0 bg-fuji-dark/45 backdrop-blur-xs transition-opacity cursor-pointer"
+          />
+          
+          {/* Modal Card */}
+          <div className="relative bg-white rounded-3xl p-5 max-w-sm w-full shadow-2xl border border-tea/10 flex flex-col max-h-[65vh] space-y-4 animate-scale-up z-10">
+            <div className="flex items-center justify-between shrink-0">
+              <h3 className="text-base font-extrabold text-fuji-dark flex items-center gap-1.5">
+                <Sparkles className="w-4 h-4 text-coral" />
+                新增旅途重要指南
+              </h3>
+              <button
+                type="button"
+                onClick={() => setShowAddModal(false)}
+                className="p-1 rounded-full hover:bg-tea/5 text-tea/50 transition-colors cursor-pointer"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <form onSubmit={handleAddItemSubmit} className="space-y-3.5 text-xs overflow-y-auto pr-1 flex-1">
+              {/* Item Name */}
+              <div className="space-y-1">
+                <label className="text-[11px] font-bold text-tea/80">事項名稱 *</label>
+                <input
+                  type="text"
+                  required
+                  placeholder="如: 吹風機、必去仙人掌冰、機車防曬"
+                  maxLength={150}
+                  value={newItemName}
+                  onChange={(e) => setNewItemName(e.target.value)}
+                  className="w-full bg-mugi/30 border border-tea/15 focus:border-fuji hover:border-tea/25 outline-none px-3.5 py-2.5 rounded-xl font-medium text-tea placeholder-tea/40 transition-colors"
+                />
               </div>
 
-              <form onSubmit={handleAddItemSubmit} className="space-y-3.5 text-xs overflow-y-auto pr-1 flex-1">
-                {/* Item Name */}
-                <div className="space-y-1">
-                  <label className="text-[11px] font-bold text-tea/80">事項名稱 *</label>
-                  <input
-                    type="text"
-                    required
-                    placeholder="如: 吹風機、必去仙人掌冰、機車防曬"
-                    maxLength={150}
-                    value={newItemName}
-                    onChange={(e) => setNewItemName(e.target.value)}
-                    className="w-full bg-mugi/30 border border-tea/15 focus:border-fuji hover:border-tea/25 outline-none px-3.5 py-2.5 rounded-xl font-medium text-tea placeholder-tea/40 transition-colors"
-                  />
-                </div>
+              {/* Item Category Select */}
+              <div className="space-y-1">
+                <label className="text-[11px] font-bold text-tea/80">歸屬分類 *</label>
+                <select
+                  value={newItemCategory}
+                  onChange={(e) => setNewItemCategory(e.target.value)}
+                  className="w-full bg-mugi/30 border border-tea/15 focus:border-fuji hover:border-tea/25 outline-none px-3.5 py-2.5 rounded-xl font-bold text-tea cursor-pointer transition-colors"
+                >
+                  <option value="essential">🎒 島上必備裝備</option>
+                  <option value="gourmet">🦪 打卡美食推薦</option>
+                  <option value="safety">💡 其他資訊</option>
+                </select>
+              </div>
 
-                {/* Item Category Select */}
-                <div className="space-y-1">
-                  <label className="text-[11px] font-bold text-tea/80">歸屬分類 *</label>
-                  <select
-                    value={newItemCategory}
-                    onChange={(e) => setNewItemCategory(e.target.value)}
-                    className="w-full bg-mugi/30 border border-tea/15 focus:border-fuji hover:border-tea/25 outline-none px-3.5 py-2.5 rounded-xl font-bold text-tea cursor-pointer transition-colors"
-                  >
-                    <option value="essential">🎒 島上必備裝備</option>
-                    <option value="gourmet">🦪 打卡美食推薦</option>
-                    <option value="safety">💡 其他資訊</option>
-                  </select>
-                </div>
+              {/* Item Link */}
+              <div className="space-y-1">
+                <label className="text-[11px] font-bold text-tea/80">相關資訊 (放網址 / 連結 - 選填)</label>
+                <input
+                  type="url"
+                  placeholder="如: https://google.com 或是 Google Map 店家連結"
+                  maxLength={500}
+                  value={newItemLink}
+                  onChange={(e) => setNewItemLink(e.target.value)}
+                  className="w-full bg-mugi/30 border border-tea/15 focus:border-fuji hover:border-tea/25 outline-none px-3.5 py-2.5 rounded-xl font-medium text-tea placeholder-tea/40 transition-colors"
+                />
+              </div>
 
-                {/* Item Link */}
-                <div className="space-y-1">
-                  <label className="text-[11px] font-bold text-tea/80">相關資訊 (放網址 / 連結 - 選填)</label>
-                  <input
-                    type="url"
-                    placeholder="如: https://google.com 或是 Google Map 店家連結"
-                    maxLength={500}
-                    value={newItemLink}
-                    onChange={(e) => setNewItemLink(e.target.value)}
-                    className="w-full bg-mugi/30 border border-tea/15 focus:border-fuji hover:border-tea/25 outline-none px-3.5 py-2.5 rounded-xl font-medium text-tea placeholder-tea/40 transition-colors"
-                  />
-                </div>
+              {/* Item Description (Remarks) */}
+              <div className="space-y-1">
+                <label className="text-[11px] font-bold text-tea/80">備註 (備註補充說明 - 選填)</label>
+                <textarea
+                  placeholder="補充細部事項，如: 電話/訂位時間..."
+                  maxLength={1000}
+                  rows={3}
+                  value={newItemDesc}
+                  onChange={(e) => setNewItemDesc(e.target.value)}
+                  className="w-full bg-mugi/30 border border-tea/15 focus:border-fuji hover:border-tea/25 outline-none px-3.5 py-2.5 rounded-xl font-medium text-tea placeholder-tea/40 transition-colors resize-none"
+                />
+              </div>
 
-                {/* Item Description (Remarks) */}
-                <div className="space-y-1">
-                  <label className="text-[11px] font-bold text-tea/80">備註 (備註補充說明 - 選填)</label>
-                  <textarea
-                    placeholder="補充細部事項，如: 電話/訂位時間..."
-                    maxLength={1000}
-                    rows={3}
-                    value={newItemDesc}
-                    onChange={(e) => setNewItemDesc(e.target.value)}
-                    className="w-full bg-mugi/30 border border-tea/15 focus:border-fuji hover:border-tea/25 outline-none px-3.5 py-2.5 rounded-xl font-medium text-tea placeholder-tea/40 transition-colors resize-none"
-                  />
-                </div>
-
-                {/* Action Buttons */}
-                <div className="flex gap-2 pt-2 shrink-0">
-                  <button
-                    type="button"
-                    onClick={() => setShowAddModal(false)}
-                    className="w-1/2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold py-2.5 rounded-xl transition-all cursor-pointer"
-                  >
-                    取消
-                  </button>
-                  <button
-                    type="submit"
-                    disabled={!newItemName.trim()}
-                    className="w-1/2 bg-fuji hover:bg-fuji-dark disabled:bg-tea/20 text-white font-bold py-2.5 rounded-xl transition-all shadow-sm cursor-pointer"
-                  >
-                    新增此欄
-                  </button>
-                </div>
-              </form>
-            </div>
+              {/* Action Buttons */}
+              <div className="flex gap-2 pt-2 shrink-0">
+                <button
+                  type="button"
+                  disabled={isSubmitting}
+                  onClick={() => setShowAddModal(false)}
+                  className="w-1/2 bg-slate-100 hover:bg-slate-200 disabled:opacity-50 text-slate-700 font-bold py-2.5 rounded-xl transition-all cursor-pointer"
+                >
+                  取消
+                </button>
+                <button
+                  type="submit"
+                  disabled={!newItemName.trim() || isSubmitting}
+                  className="w-1/2 bg-fuji hover:bg-fuji-dark disabled:bg-tea/20 disabled:text-tea/40 cursor-pointer disabled:cursor-not-allowed text-white font-bold py-2.5 rounded-xl transition-all shadow-sm flex items-center justify-center gap-1.5"
+                >
+                  {isSubmitting ? (
+                    <>
+                      <span className="inline-block animate-spin rounded-full h-3.5 w-3.5 border-2 border-white/80 border-t-transparent" />
+                      <span>新增中...</span>
+                    </>
+                  ) : (
+                    <span>新增此欄</span>
+                  )}
+                </button>
+              </div>
+            </form>
           </div>
         </div>,
         portalTarget
