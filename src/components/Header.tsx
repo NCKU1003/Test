@@ -16,7 +16,7 @@ export default function Header() {
         <div>
           <div className="flex items-center gap-1.5">
             <h1 className="text-xl font-bold tracking-tight text-fuji-dark">
-              澎湖・均跟豪 
+              澎湖・均跟豪
             </h1>
             <Sparkles className="w-4 h-4 text-coral shrink-0" />
           </div>
