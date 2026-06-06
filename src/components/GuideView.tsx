@@ -16,7 +16,7 @@ import {
   Sparkles,
   Info
 } from 'lucide-react';
-import { motion } from 'motion/react';
+import { motion } from 'framer-motion';
 
 export default function GuideView() {
   const [searchQuery, setSearchQuery] = useState('');

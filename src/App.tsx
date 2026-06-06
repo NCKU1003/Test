@@ -14,7 +14,7 @@ import BottomNav, { TabType } from './components/BottomNav';
 import ItineraryView from './components/ItineraryView';
 import GuideView from './components/GuideView';
 import WeatherView from './components/WeatherView';
-import { AnimatePresence, motion } from 'motion/react';
+import { AnimatePresence, motion } from 'framer-motion';
 import { Waves } from 'lucide-react';
 
 export default function App() {

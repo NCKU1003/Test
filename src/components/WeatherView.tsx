@@ -19,7 +19,7 @@ import {
   Eye,
   Info
 } from 'lucide-react';
-import { motion, AnimatePresence } from 'motion/react';
+import { motion, AnimatePresence } from 'framer-motion';
 
 export default function WeatherView() {
   const [selectedDayIndex, setSelectedDayIndex] = useState<number>(0);

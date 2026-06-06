@@ -22,7 +22,7 @@ import {
   Sparkles,
   Heart
 } from 'lucide-react';
-import { motion, AnimatePresence } from 'motion/react';
+import { motion, AnimatePresence } from 'framer-motion';
 
 export default function ItineraryView() {
   const [selectedDay, setSelectedDay] = useState<number>(1);
