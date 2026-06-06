@@ -26,7 +26,7 @@ service cloud.firestore {
         && data.spotId is string 
         && data.spotId.size() <= 64
         && data.photoData is string 
-        && data.photoData.size() <= 300000
+        && data.photoData.size() <= 1000000
         && data.uploadedAt is timestamp
         && data.keys().hasAll(['id', 'spotId', 'photoData', 'uploadedAt'])
         && data.keys().size() == 4;

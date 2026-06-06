@@ -42,7 +42,10 @@ export default function App() {
       <div className="fixed -bottom-12 -right-12 w-80 h-80 bg-coral/10 rounded-full blur-3xl pointer-events-none hidden lg:block" />
 
       {/* Primary Mobile Container Viewport */}
-      <main className="w-full max-w-[480px] min-h-screen md:min-h-[840px] bg-cream md:rounded-[36px] md:shadow-[0_25px_60px_-15px_rgba(59,122,158,0.22)] border-x border-y-0 md:border-y border-tea/10 flex flex-col relative overflow-hidden">
+      <main 
+        style={{ transform: 'translate3d(0, 0, 0)' }}
+        className="w-full max-w-[480px] min-h-screen md:min-h-[840px] bg-cream md:rounded-[36px] md:shadow-[0_25px_60px_-15px_rgba(59,122,158,0.22)] border-x border-y-0 md:border-y border-tea/10 flex flex-col relative overflow-hidden"
+      >
         {/* Header Section */}
         <Header />
 

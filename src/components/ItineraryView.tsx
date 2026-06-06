@@ -4,6 +4,7 @@
  */
 
 import React, { useState, useEffect } from 'react';
+import { motion, AnimatePresence } from 'motion/react';
 import { ITINERARY_DATA } from '../data';
 import { Spot, SpotType } from '../types';
 import { db, handleFirestoreError, OperationType } from '../firebase';
@@ -26,7 +27,7 @@ import {
   CloudLightning,
   CloudRain,
   Download,
-  Image
+  Image as ImageIcon
 } from 'lucide-react';
 
 interface SharedPhoto {
@@ -40,6 +41,7 @@ export default function ItineraryView() {
   const [expandedSpotId, setExpandedSpotId] = useState<string | null>(null);
   const [isCloudSyncing, setIsCloudSyncing] = useState<boolean>(false);
   const [uploadProgressId, setUploadProgressId] = useState<string | null>(null);
+  const [photoToDelete, setPhotoToDelete] = useState<string | null>(null);
   
   // Store user-uploaded photos as objects keyed by their unique photo document ID.
   const [uploadedPhotos, setUploadedPhotos] = useState<Record<string, SharedPhoto>>(() => {
@@ -137,6 +139,9 @@ export default function ItineraryView() {
     const file = event.target.files?.[0];
     if (!file) return;
 
+    // Reset input value to allow uploading the same file again if they want
+    event.target.value = '';
+
     // Generate unique photo document ID
     const randomSuffix = Math.random().toString(36).substring(2, 8);
     const photoId = `${spotId}_${Date.now()}_${randomSuffix}`.replace(/[^a-zA-Z0-9_\-]/g, '');
@@ -160,9 +165,14 @@ export default function ItineraryView() {
     }
   };
 
-  const handleRemovePhoto = async (photoId: string) => {
-    const confirmDelete = window.confirm("確定要將這張相片從雲端相簿中刪除嗎？這將會讓所有人都看不到這張相片。");
-    if (!confirmDelete) return;
+  const handleRemovePhoto = (photoId: string) => {
+    setPhotoToDelete(photoId);
+  };
+
+  const confirmRemovePhoto = async () => {
+    if (!photoToDelete) return;
+    const photoId = photoToDelete;
+    setPhotoToDelete(null);
 
     try {
       setUploadProgressId(photoId);
@@ -279,7 +289,7 @@ export default function ItineraryView() {
       <div className="bg-white p-5 rounded-[24px] border border-tea/10 shadow-sm space-y-4">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-1.5">
-            <Image className="w-5 h-5 text-coral shrink-0" />
+            <ImageIcon className="w-5 h-5 text-coral shrink-0" />
             <h3 className="font-bold text-fuji-dark text-base">
               均跟豪 ❤ 專屬雲端相簿
             </h3>
@@ -471,7 +481,10 @@ export default function ItineraryView() {
                       })}
                       
                       {/* Plus Polaroid trigger to upload next photo */}
-                      <label className="polaroid flex flex-col items-center justify-center border-2 border-dashed border-tea/20 bg-white/75 hover:bg-white rounded-xl min-w-[190px] max-w-[190px] shrink-0 p-4 transition-all duration-300 shadow-2xs hover:scale-[1.02] cursor-pointer text-center">
+                      <label 
+                        htmlFor={`upload-more-${spot.id}`}
+                        className="polaroid flex flex-col items-center justify-center border-2 border-dashed border-tea/20 bg-white/75 hover:bg-white rounded-xl min-w-[190px] max-w-[190px] shrink-0 p-4 transition-all duration-300 shadow-2xs hover:scale-[1.02] cursor-pointer text-center"
+                      >
                         <div className="p-3 bg-coral-light rounded-full text-coral group-hover:scale-110 transition-transform">
                           <Camera className="w-6 h-6" />
                         </div>
@@ -479,13 +492,14 @@ export default function ItineraryView() {
                         <span className="text-[9px] text-tea/70 mt-1 leading-relaxed">
                           在這裡上傳更多<br />專屬你們的夏日記憶！
                         </span>
-                        <input
-                          type="file"
-                          accept="image/*"
-                          className="hidden"
-                          onChange={(e) => handlePhotoUpload(spot.id, e)}
-                        />
                       </label>
+                      <input
+                        id={`upload-more-${spot.id}`}
+                        type="file"
+                        accept="image/*"
+                        className="absolute w-0 h-0 opacity-0 pointer-events-none"
+                        onChange={(e) => handlePhotoUpload(spot.id, e)}
+                      />
                     </div>
                   ) : (
                     /* Default High-Quality Placeholder with Overlaid Camera upload button */
@@ -504,17 +518,21 @@ export default function ItineraryView() {
                         拍客推薦
                       </div>
 
-                      {/* Polaroid Camera upload trigger */}
-                      <label className="absolute bottom-3 right-3 bg-coral hover:bg-coral/90 text-white p-2.5 rounded-full shadow-lg cursor-pointer flex items-center gap-1.5 transition-all active:scale-95">
+                       {/* Polaroid Camera upload trigger */}
+                      <label 
+                        htmlFor={`upload-default-${spot.id}`}
+                        className="absolute bottom-3 right-3 bg-coral hover:bg-coral/90 text-white p-2.5 rounded-full shadow-lg cursor-pointer flex items-center gap-1.5 transition-all active:scale-95"
+                      >
                         <Camera className="w-5 h-5 shrink-0" />
                         <span className="text-xs font-bold pr-1">上傳雲端相簿</span>
-                        <input
-                          type="file"
-                          accept="image/*"
-                          className="hidden"
-                          onChange={(e) => handlePhotoUpload(spot.id, e)}
-                        />
                       </label>
+                      <input
+                        id={`upload-default-${spot.id}`}
+                        type="file"
+                        accept="image/*"
+                        className="absolute w-0 h-0 opacity-0 pointer-events-none"
+                        onChange={(e) => handlePhotoUpload(spot.id, e)}
+                      />
                     </div>
                   )}
                 </div>
@@ -642,6 +660,61 @@ export default function ItineraryView() {
           </div>
         </div>
       </div>
+
+      {/* 📸 Delete Confirmation Modal */}
+      <AnimatePresence>
+        {photoToDelete && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-5">
+            {/* Backdrop */}
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setPhotoToDelete(null)}
+              className="absolute inset-0 bg-fuji-dark/30 backdrop-blur-sm"
+            />
+            
+            {/* Modal Card */}
+            <motion.div
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.9, opacity: 0 }}
+              transition={{ type: "spring", damping: 25, stiffness: 350 }}
+              className="relative bg-white rounded-[28px] p-5.5 shadow-2xl max-w-[320px] w-full border border-tea/10 space-y-4 z-10"
+            >
+              <div className="flex items-center gap-3">
+                <div className="bg-rose-50 p-2.5 rounded-2xl text-rose-500 shrink-0">
+                  <Trash2 className="w-5 h-5" />
+                </div>
+                <h3 className="font-bold text-fuji-dark text-base">
+                  確定要刪除相片嗎？
+                </h3>
+              </div>
+              
+              <p className="text-xs text-tea leading-relaxed">
+                這張相片將會從雲端相簿中永久移除，所有人（包括均跟豪）都將無法再看見它喔。
+              </p>
+              
+              <div className="flex items-center gap-2.5 pt-1.5">
+                <button
+                  type="button"
+                  onClick={() => setPhotoToDelete(null)}
+                  className="flex-1 py-2.5 rounded-xl border border-tea/15 hover:bg-tea/5 text-tea/85 font-bold text-xs cursor-pointer transition-colors active:scale-95"
+                >
+                  取消
+                </button>
+                <button
+                  type="button"
+                  onClick={confirmRemovePhoto}
+                  className="flex-1 py-2.5 rounded-xl bg-rose-500 hover:bg-rose-600 text-white font-bold text-xs cursor-pointer shadow-sm hover:shadow transition-colors active:scale-95"
+                >
+                  確定刪除
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
