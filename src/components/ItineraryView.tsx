@@ -29,16 +29,22 @@ import {
   Image
 } from 'lucide-react';
 
+interface SharedPhoto {
+  id: string;
+  spotId: string;
+  photoData: string;
+}
+
 export default function ItineraryView() {
   const [selectedDay, setSelectedDay] = useState<number>(1);
   const [expandedSpotId, setExpandedSpotId] = useState<string | null>(null);
   const [isCloudSyncing, setIsCloudSyncing] = useState<boolean>(false);
   const [uploadProgressId, setUploadProgressId] = useState<string | null>(null);
   
-  // Store user-uploaded photos in base64. Key: spotId, Value: base64 string
-  const [uploadedPhotos, setUploadedPhotos] = useState<Record<string, string>>(() => {
+  // Store user-uploaded photos as objects keyed by their unique photo document ID.
+  const [uploadedPhotos, setUploadedPhotos] = useState<Record<string, SharedPhoto>>(() => {
     try {
-      const saved = localStorage.getItem('penghu_travel_photos');
+      const saved = localStorage.getItem('penghu_travel_photos_v2');
       return saved ? JSON.parse(saved) : {};
     } catch {
       return {};
@@ -50,16 +56,20 @@ export default function ItineraryView() {
     const path = 'shared_photos';
     setIsCloudSyncing(true);
     const unsubscribe = onSnapshot(collection(db, path), (snapshot) => {
-      const photos: Record<string, string> = {};
+      const photos: Record<string, SharedPhoto> = {};
       snapshot.forEach((snapshotDoc) => {
         const data = snapshotDoc.data();
         if (data && data.photoData) {
-          photos[snapshotDoc.id] = data.photoData;
+          photos[snapshotDoc.id] = {
+            id: snapshotDoc.id,
+            spotId: data.spotId || '',
+            photoData: data.photoData,
+          };
         }
       });
       setUploadedPhotos(photos);
       try {
-        localStorage.setItem('penghu_travel_photos', JSON.stringify(photos));
+        localStorage.setItem('penghu_travel_photos_v2', JSON.stringify(photos));
       } catch (e) {
         console.warn("Storage quota might be exceeded", e);
       }
@@ -127,36 +137,39 @@ export default function ItineraryView() {
     const file = event.target.files?.[0];
     if (!file) return;
 
+    // Generate unique photo document ID
+    const randomSuffix = Math.random().toString(36).substring(2, 8);
+    const photoId = `${spotId}_${Date.now()}_${randomSuffix}`.replace(/[^a-zA-Z0-9_\-]/g, '');
+
     try {
       setUploadProgressId(spotId);
       const compressedBase64 = await compressImage(file);
       
-      const docPath = `shared_photos/${spotId}`;
-      await setDoc(doc(db, 'shared_photos', spotId), {
-        id: spotId,
+      const docPath = `shared_photos/${photoId}`;
+      await setDoc(doc(db, 'shared_photos', photoId), {
+        id: photoId,
         spotId: spotId,
         photoData: compressedBase64,
         uploadedAt: serverTimestamp(),
       });
     } catch (error) {
       console.error("Upload failed:", error);
-      handleFirestoreError(error, OperationType.WRITE, `shared_photos/${spotId}`);
+      handleFirestoreError(error, OperationType.WRITE, `shared_photos/${photoId}`);
     } finally {
       setUploadProgressId(null);
     }
   };
 
-  const handleRemovePhoto = async (spotId: string) => {
+  const handleRemovePhoto = async (photoId: string) => {
     const confirmDelete = window.confirm("確定要將這張相片從雲端相簿中刪除嗎？這將會讓所有人都看不到這張相片。");
     if (!confirmDelete) return;
 
     try {
-      setUploadProgressId(spotId);
-      const docPath = `shared_photos/${spotId}`;
-      await deleteDoc(doc(db, 'shared_photos', spotId));
+      setUploadProgressId(photoId);
+      await deleteDoc(doc(db, 'shared_photos', photoId));
     } catch (error) {
       console.error("Delete failed:", error);
-      handleFirestoreError(error, OperationType.DELETE, `shared_photos/${spotId}`);
+      handleFirestoreError(error, OperationType.DELETE, `shared_photos/${photoId}`);
     } finally {
       setUploadProgressId(null);
     }
@@ -185,18 +198,17 @@ export default function ItineraryView() {
   };
 
   const handleDownloadAllPhotos = async () => {
-    const photoIds = Object.keys(uploadedPhotos);
-    if (photoIds.length === 0) {
+    const photoList = Object.values(uploadedPhotos) as SharedPhoto[];
+    if (photoList.length === 0) {
       alert("目前雲端相本中還沒有任何照片可以下載唷！");
       return;
     }
     
-    for (let i = 0; i < photoIds.length; i++) {
-      const spotId = photoIds[i];
-      const details = getSpotDetails(spotId);
-      const data = uploadedPhotos[spotId];
-      if (data) {
-        handleDownloadSingle(details.name, data);
+    for (let i = 0; i < photoList.length; i++) {
+      const photo = photoList[i];
+      const details = getSpotDetails(photo.spotId);
+      if (photo.photoData) {
+        handleDownloadSingle(`${details.name}_${i + 1}`, photo.photoData);
         await new Promise(resolve => setTimeout(resolve, 300));
       }
     }
@@ -272,9 +284,13 @@ export default function ItineraryView() {
               均跟豪 ❤ 專屬雲端相簿
             </h3>
           </div>
-          <span className="text-[10px] bg-emerald-50 text-emerald-600 border border-emerald-200 px-2 py-0.5 rounded-full font-bold select-none">
-            ☁️ Firebase 雲端免費支援
-          </span>
+          <div className="flex items-center gap-1.5 text-[10px] bg-emerald-50 text-emerald-600 px-2 py-0.5 rounded-full border border-emerald-200 shadow-xs select-none">
+            <span className="relative flex h-1.5 w-1.5">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+              <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-emerald-500"></span>
+            </span>
+            <span>雲端同步</span>
+          </div>
         </div>
 
         {Object.keys(uploadedPhotos).length > 0 ? (
@@ -292,13 +308,12 @@ export default function ItineraryView() {
 
             {/* Grid layout of thumbnails */}
             <div className="grid grid-cols-4 gap-2.5 pt-2 border-t border-tea/5">
-              {Object.keys(uploadedPhotos).map((spotId) => {
-                const photoData = uploadedPhotos[spotId];
-                const spotInfo = getSpotDetails(spotId);
+              {(Object.values(uploadedPhotos) as SharedPhoto[]).map((photo) => {
+                const spotInfo = getSpotDetails(photo.spotId);
                 return (
-                  <div key={spotId} className="group relative aspect-square rounded-xl overflow-hidden border border-tea/10 shadow-xs bg-cream">
+                  <div key={photo.id} className="group relative aspect-square rounded-xl overflow-hidden border border-tea/10 shadow-xs bg-cream">
                     <img
-                      src={photoData}
+                      src={photo.photoData}
                       alt={spotInfo.name}
                       referrerPolicy="no-referrer"
                       className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
@@ -307,9 +322,9 @@ export default function ItineraryView() {
                       D{spotInfo.dayNumber} {spotInfo.name}
                     </div>
                     <button
-                      onClick={() => handleDownloadSingle(spotInfo.name, photoData)}
+                      onClick={() => handleDownloadSingle(spotInfo.name, photo.photoData)}
                       title={`下載 ${spotInfo.name}`}
-                      className="absolute top-1 right-1 bg-white/90 hover:bg-white text-fuji-dark hover:text-coral p-1 rounded-lg transition-colors shadow-sm"
+                      className="absolute top-1 right-1 bg-white/90 hover:bg-white text-fuji-dark hover:text-coral p-1 rounded-lg transition-colors shadow-sm cursor-pointer"
                     >
                       <Download className="w-3 h-3" />
                     </button>
@@ -346,7 +361,8 @@ export default function ItineraryView() {
       <div className="space-y-5">
         {activeDayData.spots.map((spot, index) => {
           const category = getCategoryBadge(spot.type);
-          const hasUserPhoto = !!uploadedPhotos[spot.id];
+          const spotPhotos = (Object.values(uploadedPhotos) as SharedPhoto[]).filter((p: SharedPhoto) => p.spotId === spot.id);
+          const hasUserPhotos = spotPhotos.length > 0;
           const isExpanded = expandedSpotId === spot.id;
           const isUploadingThis = uploadProgressId === spot.id;
 
@@ -391,7 +407,7 @@ export default function ItineraryView() {
                   </p>
                 </div>
 
-                {/* Cover/Placeholder Photo or Custom Polaroid */}
+                {/* Cover/Placeholder Photo or Custom Polaroid list */}
                 <div className="relative">
                   {isUploadingThis ? (
                     /* Elegant loading indicator during uploads */
@@ -401,40 +417,75 @@ export default function ItineraryView() {
                         ☁️ 正在同步到雲端相本...
                       </span>
                     </div>
-                  ) : hasUserPhoto ? (
-                    /* User Polaroid Photo Frame */
-                    <div className="flex justify-center py-4 bg-mugi/40 rounded-2xl border border-dashed border-tea/20">
-                      <div className="polaroid relative origin-center rotate-2 transition-transform hover:rotate-0 max-w-[280px]">
-                        {/* Polaroid tape effect */}
-                        <div className="absolute -top-3 left-1/2 -translate-x-1/2 w-16 h-6 bg-white/60 backdrop-blur-xs border-y border-white/30 rotate-1 shadow-xs" />
-                        <img
-                          src={uploadedPhotos[spot.id]}
-                          alt={`${spot.name} 旅遊紀念`}
-                          className="w-full h-44 object-cover rounded-sm border border-slate-100"
-                        />
-                        <div className="pt-3 text-center">
-                          <p className="font-sans text-xs font-bold text-fuji-dark flex items-center justify-center gap-1 flex-wrap">
-                            <Heart className="w-3.5 h-3.5 text-coral fill-coral animate-pulse" />
-                            {activeDayData.dateStr.split(' ｜ ')[0]} 紀念
-                          </p>
-                          <div className="flex gap-2 justify-center mt-2.5 flex-wrap px-2">
-                            <button
-                              onClick={() => handleDownloadSingle(spot.name, uploadedPhotos[spot.id])}
-                              className="bg-emerald-50 hover:bg-emerald-100 text-emerald-600 text-[10px] font-bold py-1 px-2 rounded-lg flex items-center gap-1 transition-colors border border-emerald-200 cursor-pointer shadow-xs active:scale-95 text-center justify-center"
-                            >
-                              <Download className="w-3 h-3" />
-                              下載相片
-                            </button>
-                            <button
-                              onClick={() => handleRemovePhoto(spot.id)}
-                              className="bg-rose-50 hover:bg-rose-100 text-rose-500 text-[10px] font-bold py-1 px-2 rounded-lg flex items-center gap-1 transition-colors border border-rose-200 cursor-pointer shadow-xs active:scale-95 text-center justify-center"
-                            >
-                              <Trash2 className="w-3 h-3" />
-                              刪除相片
-                            </button>
+                  ) : hasUserPhotos ? (
+                    /* User Polaroid Photo Horizontal Scroll Strip */
+                    <div className="flex gap-4 overflow-x-auto py-4 px-3 bg-mugi/40 rounded-2xl border border-dashed border-tea/20 no-scrollbar">
+                      {spotPhotos.map((photo, pIdx) => {
+                        const isDeletingThis = uploadProgressId === photo.id;
+                        return (
+                          <div 
+                            key={photo.id} 
+                            style={{ transform: `rotate(${(pIdx % 2 === 0 ? 1.5 : -1.5)}deg)` }}
+                            className="polaroid relative bg-white p-3 rounded-xl shadow-xs border border-tea/10 min-w-[190px] max-w-[190px] shrink-0 transition-transform hover:rotate-0 hover:scale-[1.02]"
+                          >
+                            {/* Polaroid tape effect */}
+                            <div className="absolute -top-2 px-3 py-0.5 left-1/2 -translate-x-1/2 bg-white/70 backdrop-blur-xs border-y border-white/40 shadow-2xs rotate-1 text-[7px] text-coral font-bold uppercase select-none">
+                              PENGHU 2026
+                            </div>
+                            <div className="relative aspect-square rounded-sm overflow-hidden border border-slate-100 bg-cream">
+                              {isDeletingThis ? (
+                                <div className="absolute inset-0 bg-white/80 flex items-center justify-center">
+                                  <div className="w-5 h-5 rounded-full border-2 border-rose-500 border-t-transparent animate-spin" />
+                                </div>
+                              ) : null}
+                              <img
+                                src={photo.photoData}
+                                alt={`${spot.name} 旅遊紀念 ${pIdx + 1}`}
+                                className="w-full h-full object-cover"
+                              />
+                            </div>
+                            <div className="pt-2 text-center">
+                              <p className="font-sans text-[10px] font-bold text-fuji-dark flex items-center justify-center gap-1">
+                                <Heart className="w-2.5 h-2.5 text-coral fill-coral animate-pulse" />
+                                旅途回憶 #{pIdx + 1}
+                              </p>
+                              <div className="flex gap-1 justify-center mt-2 flex-wrap">
+                                <button
+                                  onClick={() => handleDownloadSingle(`${spot.name}_${pIdx + 1}`, photo.photoData)}
+                                  className="bg-emerald-50 hover:bg-emerald-100 text-emerald-600 text-[9px] font-bold py-1 px-1.5 rounded-lg flex items-center gap-0.5 transition-colors border border-emerald-200 cursor-pointer shadow-2xs active:scale-95"
+                                >
+                                  <Download className="w-2.5 h-2.5" />
+                                  下載
+                                </button>
+                                <button
+                                  onClick={() => handleRemovePhoto(photo.id)}
+                                  className="bg-rose-50 hover:bg-rose-100 text-rose-500 text-[9px] font-bold py-1 px-1.5 rounded-lg flex items-center gap-0.5 transition-colors border border-rose-200 cursor-pointer shadow-2xs active:scale-95"
+                                >
+                                  <Trash2 className="w-2.5 h-2.5" />
+                                  刪除
+                                </button>
+                              </div>
+                            </div>
                           </div>
+                        );
+                      })}
+                      
+                      {/* Plus Polaroid trigger to upload next photo */}
+                      <label className="polaroid flex flex-col items-center justify-center border-2 border-dashed border-tea/20 bg-white/75 hover:bg-white rounded-xl min-w-[190px] max-w-[190px] shrink-0 p-4 transition-all duration-300 shadow-2xs hover:scale-[1.02] cursor-pointer text-center">
+                        <div className="p-3 bg-coral-light rounded-full text-coral group-hover:scale-110 transition-transform">
+                          <Camera className="w-6 h-6" />
                         </div>
-                      </div>
+                        <span className="text-xs font-bold text-fuji-dark mt-2.5">繼續上傳相片</span>
+                        <span className="text-[9px] text-tea/70 mt-1 leading-relaxed">
+                          在這裡上傳更多<br />專屬你們的夏日記憶！
+                        </span>
+                        <input
+                          type="file"
+                          accept="image/*"
+                          className="hidden"
+                          onChange={(e) => handlePhotoUpload(spot.id, e)}
+                        />
+                      </label>
                     </div>
                   ) : (
                     /* Default High-Quality Placeholder with Overlaid Camera upload button */

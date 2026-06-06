@@ -7,7 +7,7 @@
       "properties": {
         "id": {
           "type": "string",
-          "description": "Unique document ID (same as spotId)"
+          "description": "Unique document ID (e.g. spotId_timestamp)"
         },
         "spotId": {
           "type": "string",

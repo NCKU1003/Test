@@ -39,7 +39,7 @@ service cloud.firestore {
       
       allow create: if isValidId(photoId) 
         && incoming().id == photoId 
-        && incoming().spotId == photoId 
+        && isValidId(incoming().spotId)
         && isValidSharedPhoto(incoming())
         && incoming().uploadedAt == request.time;
         
