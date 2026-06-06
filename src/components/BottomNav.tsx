@@ -59,9 +59,7 @@ export default function BottomNav({ activeTab, setActiveTab }: BottomNavProps) {
               </span>
             </div>
             
-            {isActive && (
-              <span className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-1.5 h-1.5 bg-coral rounded-full animate-ping" />
-            )}
+            {/* Active state is fully represented by the background color change, so we don't need the dot */}
           </button>
         );
       })}

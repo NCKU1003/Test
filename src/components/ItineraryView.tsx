@@ -4,6 +4,7 @@
  */
 
 import React, { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'motion/react';
 import { ITINERARY_DATA } from '../data';
 import { Spot, SpotType } from '../types';
@@ -42,6 +43,11 @@ export default function ItineraryView() {
   const [isCloudSyncing, setIsCloudSyncing] = useState<boolean>(false);
   const [uploadProgressId, setUploadProgressId] = useState<string | null>(null);
   const [photoToDelete, setPhotoToDelete] = useState<string | null>(null);
+  const [portalTarget, setPortalTarget] = useState<HTMLElement | null>(null);
+
+  useEffect(() => {
+    setPortalTarget(document.getElementById('app-viewport'));
+  }, []);
   
   // Store user-uploaded photos as objects keyed by their unique photo document ID.
   const [uploadedPhotos, setUploadedPhotos] = useState<Record<string, SharedPhoto>>(() => {
@@ -574,7 +580,7 @@ export default function ItineraryView() {
                     }`}
                   >
                     <Car className="w-3.5 h-3.5" />
-                    附近車位 / 加油站
+                    附近資訊
                     {isExpanded ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
                   </button>
                 </div>
@@ -662,59 +668,62 @@ export default function ItineraryView() {
       </div>
 
       {/* 📸 Delete Confirmation Modal */}
-      <AnimatePresence>
-        {photoToDelete && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-5">
-            {/* Backdrop */}
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              onClick={() => setPhotoToDelete(null)}
-              className="absolute inset-0 bg-fuji-dark/30 backdrop-blur-sm"
-            />
-            
-            {/* Modal Card */}
-            <motion.div
-              initial={{ scale: 0.9, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.9, opacity: 0 }}
-              transition={{ type: "spring", damping: 25, stiffness: 350 }}
-              className="relative bg-white rounded-[28px] p-5.5 shadow-2xl max-w-[320px] w-full border border-tea/10 space-y-4 z-10"
-            >
-              <div className="flex items-center gap-3">
-                <div className="bg-rose-50 p-2.5 rounded-2xl text-rose-500 shrink-0">
-                  <Trash2 className="w-5 h-5" />
+      {portalTarget && createPortal(
+        <AnimatePresence>
+          {photoToDelete && (
+            <div className="absolute inset-0 z-50 flex items-center justify-center p-5">
+              {/* Backdrop */}
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                onClick={() => setPhotoToDelete(null)}
+                className="absolute inset-0 bg-fuji-dark/30 backdrop-blur-sm"
+              />
+              
+              {/* Modal Card */}
+              <motion.div
+                initial={{ scale: 0.9, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                exit={{ scale: 0.9, opacity: 0 }}
+                transition={{ type: "spring", damping: 25, stiffness: 350 }}
+                className="relative bg-white rounded-[28px] p-5.5 shadow-2xl max-w-[320px] w-full border border-tea/10 space-y-4 z-10"
+              >
+                <div className="flex items-center gap-3">
+                  <div className="bg-rose-50 p-2.5 rounded-2xl text-rose-500 shrink-0">
+                    <Trash2 className="w-5 h-5" />
+                  </div>
+                  <h3 className="font-bold text-fuji-dark text-base">
+                    確定要刪除相片嗎？
+                  </h3>
                 </div>
-                <h3 className="font-bold text-fuji-dark text-base">
-                  確定要刪除相片嗎？
-                </h3>
-              </div>
-              
-              <p className="text-xs text-tea leading-relaxed">
-                這張相片將會從雲端相簿中永久移除，所有人（包括均跟豪）都將無法再看見它喔。
-              </p>
-              
-              <div className="flex items-center gap-2.5 pt-1.5">
-                <button
-                  type="button"
-                  onClick={() => setPhotoToDelete(null)}
-                  className="flex-1 py-2.5 rounded-xl border border-tea/15 hover:bg-tea/5 text-tea/85 font-bold text-xs cursor-pointer transition-colors active:scale-95"
-                >
-                  取消
-                </button>
-                <button
-                  type="button"
-                  onClick={confirmRemovePhoto}
-                  className="flex-1 py-2.5 rounded-xl bg-rose-500 hover:bg-rose-600 text-white font-bold text-xs cursor-pointer shadow-sm hover:shadow transition-colors active:scale-95"
-                >
-                  確定刪除
-                </button>
-              </div>
-            </motion.div>
-          </div>
-        )}
-      </AnimatePresence>
+                
+                <p className="text-xs text-tea leading-relaxed">
+                  這張相片將會從雲端相簿中永久移除，所有人（包括均跟豪）都將無法再看見它喔。
+                </p>
+                
+                <div className="flex items-center gap-2.5 pt-1.5">
+                  <button
+                    type="button"
+                    onClick={() => setPhotoToDelete(null)}
+                    className="flex-1 py-2.5 rounded-xl border border-tea/15 hover:bg-tea/5 text-tea/85 font-bold text-xs cursor-pointer transition-colors active:scale-95"
+                  >
+                    取消
+                  </button>
+                  <button
+                    type="button"
+                    onClick={confirmRemovePhoto}
+                    className="flex-1 py-2.5 rounded-xl bg-rose-500 hover:bg-rose-600 text-white font-bold text-xs cursor-pointer shadow-sm hover:shadow transition-colors active:scale-95"
+                  >
+                    確定刪除
+                  </button>
+                </div>
+              </motion.div>
+            </div>
+          )}
+        </AnimatePresence>,
+        portalTarget
+      )}
     </div>
   );
 }

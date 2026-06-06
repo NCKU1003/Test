@@ -99,7 +99,7 @@ export const ITINERARY_DATA: ItineraryDay[] = [
         name: "外垵漁港觀景台",
         description: "外垵是全澎湖最富裕的純樸漁村，依山而建的白色民宅逐級層遞。傍晚時分登上山頭觀景台，俯瞰彎月形的漁港亮起點點漁火，宛如「台版聖托里尼」。",
         type: "attraction",
-        highlights: ["必打卡", "菊島聖托里尼"],
+        highlights: ["必打卡", "聖托里尼"],
         gmapUrl: "https://maps.google.com/?q=外垵漁港觀景台",
         parkingAndGasInfo: {
           parking: "外垵高地位於三仙塔附近，空地極大，汽機車直接停在草地或空地上即可。",
@@ -366,7 +366,7 @@ export const ITINERARY_DATA: ItineraryDay[] = [
         name: "澎坊 PIER3 三號港免稅商店",
         description: "澎湖最大、最華麗的大型免稅精緻商場。在回台前做最後的採購，匯集各類高檔名牌、化妝品以及最齊全的澎湖黑糖糕、花生酥、鹹餅伴手禮，一站購齊！",
         type: "shopping",
-        highlights: ["必買", "免稅大採購"],
+        highlights: ["必買", "免稅"],
         gmapUrl: "https://maps.google.com/?q=三號港免稅商店",
         parkingAndGasInfo: {
           parking: "設置有大型地下收費汽車停車場，周邊有寬廣的人行道及機車免費停靠格。",
