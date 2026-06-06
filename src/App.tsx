@@ -33,7 +33,7 @@ export default function App() {
   };
 
   return (
-    <div className="min-h-screen bg-mugi py-0 md:py-8 flex flex-col justify-center items-center relative overflow-x-hidden antialiased">
+    <div className="fixed inset-0 md:relative md:inset-auto h-full md:h-auto md:min-h-screen bg-mugi py-0 md:py-8 flex flex-col justify-center items-center overflow-hidden md:overflow-x-hidden antialiased">
       {/* Wave pattern decorative background for desktop viewports */}
       <div className="fixed inset-0 opacity-15 wave-texture pointer-events-none hidden md:block" />
 
