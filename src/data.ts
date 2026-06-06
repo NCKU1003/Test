@@ -449,7 +449,7 @@ export const GUIDE_CATEGORIES: GuideCategory[] = [
   {
     id: "safety",
     iconName: "ShieldAlert",
-    title: "菊島安心玩機車須知",
+    title: "其他資訊",
     items: [
       { name: "小心「黑沙、強風與碎石」", desc: "離島玄武岩碎石坡路與沙灘入口易滑胎，騎乘請控制在40km內。", checked: true, tag: "騎乘安全" },
       { name: "隨時檢查「中油加油站」位置", desc: "本島大主幹道、跳島各島僅有一間，下午17點多數打烊，務必提早加滿！", checked: true, tag: "加油站提醒" },

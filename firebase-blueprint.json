@@ -114,6 +114,47 @@
         }
       },
       "required": ["id", "dayNumber", "time", "name", "type", "createdAt"]
+    },
+    "guide_items": {
+      "title": "GuideItem",
+      "description": "Items in the guide checklists, customizable by users",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique item document ID"
+        },
+        "categoryId": {
+          "type": "string",
+          "description": "The category this item belongs to ('essential', 'gourmet', 'safety')"
+        },
+        "name": {
+          "type": "string",
+          "description": "Name or title of the checklist/tip item"
+        },
+        "desc": {
+          "type": "string",
+          "description": "Detailed description or guidance tip"
+        },
+        "checked": {
+          "type": "boolean",
+          "description": "Whether this checklist item is completed"
+        },
+        "tag": {
+          "type": "string",
+          "description": "Optional label or tag"
+        },
+        "link": {
+          "type": "string",
+          "description": "Optional URL link related to this item"
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "When this item was added"
+        }
+      },
+      "required": ["id", "categoryId", "name", "checked", "createdAt"]
     }
   },
   "firestore": {
@@ -128,6 +169,10 @@
     "/custom_spots/{spotId}": {
       "schema": "custom_spots",
       "description": "Custom spots added to the itinerary from the wishlist"
+    },
+    "/guide_items/{itemId}": {
+      "schema": "guide_items",
+      "description": "Survival tips and checklist items in the guide view, synced in real time"
     }
   }
 }

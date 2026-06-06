@@ -53,9 +53,11 @@ export interface GuideCategory {
   iconName: string;
   title: string;
   items: {
+    id?: string;
     name: string;
     desc: string;
     checked?: boolean;
     tag?: string;
+    link?: string;
   }[];
 }
