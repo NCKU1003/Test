@@ -20,13 +20,16 @@ import {
   Info,
   Plus,
   Trash2,
-  X
+  X,
+  Camera,
+  Eye,
+  ImageIcon
 } from 'lucide-react';
 
 const CATEGORY_MAP = [
+  { id: 'safety', iconName: 'ShieldAlert', title: '其他資訊' },
   { id: 'essential', iconName: 'Briefcase', title: '島上必備裝備' },
   { id: 'gourmet', iconName: 'UtensilsCrossed', title: '打卡菊島美食推薦' },
-  { id: 'safety', iconName: 'ShieldAlert', title: '其他資訊' },
 ];
 
 export default function GuideView() {
@@ -39,14 +42,96 @@ export default function GuideView() {
   const [showAddModal, setShowAddModal] = useState(false);
   const [newItemName, setNewItemName] = useState('');
   const [newItemDesc, setNewItemDesc] = useState('');
-  const [newItemCategory, setNewItemCategory] = useState('essential');
+  const [newItemCategory, setNewItemCategory] = useState('safety');
   const [newItemLink, setNewItemLink] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  
+  // Screenshot upload & viewer states
+  const [screenshotData, setScreenshotData] = useState<string>('');
+  const [screenshotLoading, setScreenshotLoading] = useState(false);
+  const [previewScreenshot, setPreviewScreenshot] = useState<string | null>(null);
   const [portalTarget, setPortalTarget] = useState<HTMLElement | null>(null);
 
   useEffect(() => {
     setPortalTarget(document.getElementById('app-viewport'));
   }, []);
+
+  // Autofill cleanup when modal is closed
+  useEffect(() => {
+    if (!showAddModal) {
+      setNewItemName('');
+      setNewItemDesc('');
+      setNewItemCategory('safety');
+      setNewItemLink('');
+      setScreenshotData('');
+      setScreenshotLoading(false);
+    }
+  }, [showAddModal]);
+
+  // Client-side quick compression to ensure image fits in Firestore limit (<300KB)
+  const compressImage = (file: File): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      const img = new Image();
+      const reader = new FileReader();
+
+      reader.onload = (e) => {
+        img.src = e.target?.result as string;
+      };
+
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        const MAX_WIDTH = 720;
+        const MAX_HEIGHT = 720;
+        let width = img.width;
+        let height = img.height;
+
+        if (width > height) {
+          if (width > MAX_WIDTH) {
+            height *= MAX_WIDTH / width;
+            width = MAX_WIDTH;
+          }
+        } else {
+          if (height > MAX_HEIGHT) {
+            width *= MAX_HEIGHT / height;
+            height = MAX_HEIGHT;
+          }
+        }
+
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext('2d');
+        if (ctx) {
+          ctx.drawImage(img, 0, 0, width, height);
+          const compressedBase64 = canvas.toDataURL('image/jpeg', 0.65);
+          resolve(compressedBase64);
+        } else {
+          resolve(img.src);
+        }
+      };
+
+      reader.onerror = (error) => reject(error);
+      img.onerror = (error) => reject(error);
+      reader.readAsDataURL(file);
+    });
+  };
+
+  const handleScreenshotFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    // Reset input value to allow selecting same file if desired
+    event.target.value = '';
+
+    try {
+      setScreenshotLoading(true);
+      const compressedBase64 = await compressImage(file);
+      setScreenshotData(compressedBase64);
+    } catch (error) {
+      console.error("Failed to compress screenshot:", error);
+    } finally {
+      setScreenshotLoading(false);
+    }
+  };
 
   useEffect(() => {
     const q = collection(db, 'guide_items');
@@ -140,14 +225,16 @@ export default function GuideView() {
         desc: newItemDesc.trim(),
         checked: false,
         link: newItemLink.trim() || '',
+        screenshot: screenshotData || '',
         createdAt: serverTimestamp()
       });
       
       // Reset input fields
       setNewItemName('');
       setNewItemDesc('');
-      setNewItemCategory('essential');
+      setNewItemCategory('safety');
       setNewItemLink('');
+      setScreenshotData('');
       setShowAddModal(false);
     } catch (error) {
       handleFirestoreError(error, OperationType.CREATE, `guide_items/${itemId}`);
@@ -211,7 +298,7 @@ export default function GuideView() {
           
           <button
             onClick={() => {
-              setNewItemCategory('essential');
+              setNewItemCategory('safety');
               setShowAddModal(true);
             }}
             className="shrink-0 bg-fuji hover:bg-fuji-dark text-white rounded-xl px-3.5 py-2 text-xs font-bold flex items-center gap-1 transition-all shadow-sm active:scale-95 cursor-pointer"
@@ -338,6 +425,30 @@ export default function GuideView() {
                                 {item.desc}
                               </p>
                             )}
+
+                            {item.screenshot && (
+                              <div className="pt-2 flex items-center gap-2">
+                                <div 
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    e.preventDefault();
+                                    setPreviewScreenshot(item.screenshot);
+                                  }}
+                                  className="relative group w-11 h-11 rounded-lg overflow-hidden border border-tea/15 bg-slate-50 cursor-zoom-in hover:shadow-xs transition-shadow shrink-0 pointer-events-auto"
+                                >
+                                  <img 
+                                    src={item.screenshot} 
+                                    alt="screenshot" 
+                                    className="w-full h-full object-cover group-hover:scale-105 transition-transform"
+                                    referrerPolicy="no-referrer"
+                                  />
+                                  <div className="absolute inset-0 bg-black/10 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity">
+                                    <Eye className="w-3.5 h-3.5 text-white" />
+                                  </div>
+                                </div>
+                                <span className="text-[10px] text-tea/60 font-semibold select-none">📸 點擊放大參考圖</span>
+                              </div>
+                            )}
                           </div>
                         </div>
 
@@ -397,7 +508,7 @@ export default function GuideView() {
           />
           
           {/* Modal Card */}
-          <div className="relative bg-white rounded-3xl p-5 max-w-sm w-full shadow-2xl border border-tea/10 flex flex-col max-h-[65vh] space-y-4 animate-scale-up z-10">
+          <div className="relative bg-white rounded-3xl p-5 max-w-sm w-full shadow-2xl border border-tea/10 flex flex-col max-h-[82vh] space-y-4 animate-scale-up z-10">
             <div className="flex items-center justify-between shrink-0">
               <h3 className="text-base font-extrabold text-fuji-dark flex items-center gap-1.5">
                 <Sparkles className="w-4 h-4 text-coral" />
@@ -435,9 +546,9 @@ export default function GuideView() {
                   onChange={(e) => setNewItemCategory(e.target.value)}
                   className="w-full bg-mugi/30 border border-tea/15 focus:border-fuji hover:border-tea/25 outline-none px-3.5 py-2.5 rounded-xl font-bold text-tea cursor-pointer transition-colors"
                 >
+                  <option value="safety">💡 其他資訊</option>
                   <option value="essential">🎒 島上必備裝備</option>
                   <option value="gourmet">🦪 打卡美食推薦</option>
-                  <option value="safety">💡 其他資訊</option>
                 </select>
               </div>
 
@@ -467,11 +578,62 @@ export default function GuideView() {
                 />
               </div>
 
+              {/* Screenshot Attachment (Optional) */}
+              <div className="space-y-1">
+                <label className="text-[11px] font-bold text-tea/80 block">上傳截圖 / 相關照片 (選填)</label>
+                
+                {screenshotData ? (
+                  <div className="relative w-full h-32 rounded-xl overflow-hidden border border-tea/15 bg-slate-50 group">
+                    <img 
+                      src={screenshotData} 
+                      alt="Selected Screenshot" 
+                      className="w-full h-full object-cover"
+                      referrerPolicy="no-referrer"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setScreenshotData('')}
+                      className="absolute top-2 right-2 bg-black/60 hover:bg-black/80 text-white rounded-full p-1.5 transition-colors cursor-pointer flex items-center justify-center shadow-md"
+                      title="移除相片"
+                    >
+                      <X className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+                ) : (
+                  <div className="relative">
+                    <label
+                      htmlFor="guide-screenshot-upload"
+                      className="w-full h-11 border border-dashed border-tea/25 hover:border-fuji/50 bg-mugi/20 hover:bg-mugi/40 rounded-xl flex items-center justify-center gap-2 cursor-pointer transition-colors text-tea/75 font-semibold"
+                    >
+                      {screenshotLoading ? (
+                        <>
+                          <span className="inline-block animate-spin rounded-full h-3.5 w-3.5 border-2 border-fuji border-t-transparent" />
+                          <span className="text-[11.5px] text-fuji">圖片編碼壓縮中...</span>
+                        </>
+                      ) : (
+                        <>
+                          <Camera className="w-4 h-4 text-fuji" />
+                          <span className="text-[11px]">選擇截圖或拍照上傳</span>
+                        </>
+                      )}
+                    </label>
+                    <input
+                      id="guide-screenshot-upload"
+                      type="file"
+                      accept="image/*"
+                      disabled={screenshotLoading}
+                      className="hidden"
+                      onChange={handleScreenshotFileChange}
+                    />
+                  </div>
+                )}
+              </div>
+
               {/* Action Buttons */}
               <div className="flex gap-2 pt-2 shrink-0">
                 <button
                   type="button"
-                  disabled={isSubmitting}
+                  disabled={isSubmitting || screenshotLoading}
                   onClick={() => setShowAddModal(false)}
                   className="w-1/2 bg-slate-100 hover:bg-slate-200 disabled:opacity-50 text-slate-700 font-bold py-2.5 rounded-xl transition-all cursor-pointer"
                 >
@@ -479,7 +641,7 @@ export default function GuideView() {
                 </button>
                 <button
                   type="submit"
-                  disabled={!newItemName.trim() || isSubmitting}
+                  disabled={!newItemName.trim() || isSubmitting || screenshotLoading}
                   className="w-1/2 bg-fuji hover:bg-fuji-dark disabled:bg-tea/20 disabled:text-tea/40 cursor-pointer disabled:cursor-not-allowed text-white font-bold py-2.5 rounded-xl transition-all shadow-sm flex items-center justify-center gap-1.5"
                 >
                   {isSubmitting ? (
@@ -493,6 +655,44 @@ export default function GuideView() {
                 </button>
               </div>
             </form>
+          </div>
+        </div>,
+        portalTarget
+      )}
+
+      {/* 📸 Screenshot Zoom Viewer Modal */}
+      {previewScreenshot && portalTarget && createPortal(
+        <div className="absolute inset-0 z-60 flex items-center justify-center p-4 overflow-hidden pointer-events-auto">
+          {/* Backdrop */}
+          <div 
+            onClick={() => setPreviewScreenshot(null)}
+            className="absolute inset-0 bg-black/80 backdrop-blur-md transition-opacity cursor-zoom-out"
+          />
+          
+          {/* Main Zoomed Image Container */}
+          <div className="relative max-w-lg w-full flex flex-col items-center justify-center pointer-events-none md:p-6 animate-scale-up z-10">
+            <div className="relative pointer-events-auto max-w-[90vw] max-h-[80vh]">
+              <img 
+                src={previewScreenshot} 
+                alt="Enlarged Screenshot" 
+                className="rounded-2xl shadow-2xl max-w-full max-h-[75vh] object-contain border-2 border-white/95"
+                referrerPolicy="no-referrer"
+              />
+              
+              {/* Close Button top-right over the image container */}
+              <button
+                onClick={() => setPreviewScreenshot(null)}
+                className="absolute -top-12 right-0 bg-white/10 hover:bg-white/25 active:scale-95 text-white p-2 rounded-full shadow-lg cursor-pointer transition-all border border-white/20"
+                title="關閉"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            
+            {/* Download/Indicator text */}
+            <p className="text-white/60 text-xs font-semibold mt-4 text-center pointer-events-auto select-none bg-black/45 px-4 py-1.5 rounded-full backdrop-blur-xs">
+              💡 雲端備份圖片偏好 點頁面外側即可關閉
+            </p>
           </div>
         </div>,
         portalTarget

@@ -59,5 +59,6 @@ export interface GuideCategory {
     checked?: boolean;
     tag?: string;
     link?: string;
+    screenshot?: string;
   }[];
 }
