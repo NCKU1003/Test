@@ -1,0 +1,6 @@
+{
+  "name": "澎湖・菊島夏日散策",
+  "description": "專為手機設計的澎湖夏日自由行一頁式旅遊 App，具備每日精選行程、裝備與拍照指南，以及即時天氣和風浪預報功能。",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

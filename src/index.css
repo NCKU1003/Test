@@ -1,0 +1,50 @@
+@import url('https://fonts.googleapis.com/css2?family=Zen+Maru+Gothic:wght@400;500;700&display=swap');
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Zen Maru Gothic", system-ui, -apple-system, sans-serif;
+  --color-fuji: #3B7A9E;
+  --color-fuji-dark: #2F627F;
+  --color-fuji-light: #EBF2F6;
+  --color-coral: #FF7F50;
+  --color-coral-light: #FFF0EA;
+  --color-mugi: #F5F2EB;
+  --color-cream: #FAF9F6;
+  --color-tea: #8C8275;
+}
+
+@layer utilities {
+  /* Hide scrollbar for Chrome, Safari and Opera */
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+  /* Hide scrollbar for IE, Edge and Firefox */
+  .no-scrollbar {
+    -ms-overflow-style: none;  /* IE and Edge */
+    scrollbar-width: none;  /* Firefox */
+  }
+}
+
+body {
+  background-color: var(--color-mugi);
+  color: var(--color-tea);
+  font-family: var(--font-sans);
+}
+
+/* Cute Japanese style wave texture background */
+.wave-texture {
+  background-color: #FAF9F6;
+  background-image: radial-gradient(circle at 100% 150%, #FAF9F6 24%, #EAE6E1 24%, #EAE6E1 28%, #FAF9F6 28%, #FAF9F6).35s,
+                    radial-gradient(circle at 0% 150%, #FAF9F6 24%, #EAE6E1 24%, #EAE6E1 28%, #FAF9F6 28%, #FAF9F6).35s,
+                    radial-gradient(circle at 50%  100%, #EAE6E1 4%, #FAF9F6 4%, #FAF9F6);
+  background-size: 16px 16px;
+}
+
+/* Polaroid tilt effect helper */
+.polaroid {
+  background: white;
+  padding: 8px 8px 16px 8px;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03), 0 10px 15px -3px rgba(0, 0, 0, 0.05);
+  border: 1px solid #EAE6E1;
+}
+
