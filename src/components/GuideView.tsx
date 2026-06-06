@@ -23,7 +23,8 @@ import {
   X,
   Camera,
   Eye,
-  ImageIcon
+  ImageIcon,
+  Pencil
 } from 'lucide-react';
 
 const CATEGORY_MAP = [
@@ -40,6 +41,7 @@ export default function GuideView() {
 
   // States for Add Custom Item Modal
   const [showAddModal, setShowAddModal] = useState(false);
+  const [editingItemId, setEditingItemId] = useState<string | null>(null);
   const [newItemName, setNewItemName] = useState('');
   const [newItemDesc, setNewItemDesc] = useState('');
   const [newItemCategory, setNewItemCategory] = useState('safety');
@@ -65,8 +67,21 @@ export default function GuideView() {
       setNewItemLink('');
       setScreenshotData('');
       setScreenshotLoading(false);
+      setEditingItemId(null);
     }
   }, [showAddModal]);
+
+  const handleStartEdit = (item: any, e: React.MouseEvent) => {
+    e.stopPropagation(); // Avoid checking/unchecking the item
+    e.preventDefault();
+    setEditingItemId(item.id);
+    setNewItemName(item.name || '');
+    setNewItemDesc(item.desc || '');
+    setNewItemCategory(item.categoryId || 'safety');
+    setNewItemLink(item.link || '');
+    setScreenshotData(item.screenshot || '');
+    setShowAddModal(true);
+  };
 
   // Client-side quick compression to ensure image fits in Firestore limit (<300KB)
   const compressImage = (file: File): Promise<string> => {
@@ -215,19 +230,30 @@ export default function GuideView() {
     if (!newItemName.trim() || isSubmitting) return;
 
     setIsSubmitting(true);
-    // Alphanumeric id safe for isValidId rules
-    const itemId = `guide_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
     try {
-      await setDoc(doc(db, 'guide_items', itemId), {
-        id: itemId,
-        categoryId: newItemCategory,
-        name: newItemName.trim(),
-        desc: newItemDesc.trim(),
-        checked: false,
-        link: newItemLink.trim() || '',
-        screenshot: screenshotData || '',
-        createdAt: serverTimestamp()
-      });
+      if (editingItemId) {
+        // Edit existing item
+        await updateDoc(doc(db, 'guide_items', editingItemId), {
+          categoryId: newItemCategory,
+          name: newItemName.trim(),
+          desc: newItemDesc.trim(),
+          link: newItemLink.trim() || '',
+          screenshot: screenshotData || ''
+        });
+      } else {
+        // Add new item
+        const itemId = `guide_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
+        await setDoc(doc(db, 'guide_items', itemId), {
+          id: itemId,
+          categoryId: newItemCategory,
+          name: newItemName.trim(),
+          desc: newItemDesc.trim(),
+          checked: false,
+          link: newItemLink.trim() || '',
+          screenshot: screenshotData || '',
+          createdAt: serverTimestamp()
+        });
+      }
       
       // Reset input fields
       setNewItemName('');
@@ -235,9 +261,12 @@ export default function GuideView() {
       setNewItemCategory('safety');
       setNewItemLink('');
       setScreenshotData('');
+      setEditingItemId(null);
       setShowAddModal(false);
     } catch (error) {
-      handleFirestoreError(error, OperationType.CREATE, `guide_items/${itemId}`);
+      const op = editingItemId ? OperationType.UPDATE : OperationType.CREATE;
+      const path = `guide_items/${editingItemId || 'new'}`;
+      handleFirestoreError(error, op, path);
     } finally {
       setIsSubmitting(false);
     }
@@ -452,7 +481,7 @@ export default function GuideView() {
                           </div>
                         </div>
 
-                        {/* Inline Delete Button with Confirm Step */}
+                        {/* Action Buttons: Edit and Delete */}
                         <div className="shrink-0 flex items-center">
                           {deleteConfirmId === item.id ? (
                             <button
@@ -465,17 +494,26 @@ export default function GuideView() {
                               確、定、刪、除
                             </button>
                           ) : (
-                            <button
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                e.preventDefault();
-                                setDeleteConfirmId(item.id);
-                              }}
-                              className="p-1 rounded-lg text-tea/20 hover:text-red-500 hover:bg-red-50 transition-colors cursor-pointer"
-                              title="刪除"
-                            >
-                              <Trash2 className="w-4 h-4" />
-                            </button>
+                            <div className="flex items-center gap-1.5">
+                              <button
+                                onClick={(e) => handleStartEdit(item, e)}
+                                className="p-1 rounded-lg text-tea/20 hover:text-fuji hover:bg-fuji-light/50 transition-colors cursor-pointer pointer-events-auto"
+                                title="編輯"
+                              >
+                                <Pencil className="w-4 h-4" />
+                              </button>
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  e.preventDefault();
+                                  setDeleteConfirmId(item.id);
+                                }}
+                                className="p-1 rounded-lg text-tea/20 hover:text-red-500 hover:bg-red-50 transition-colors cursor-pointer"
+                                title="刪除"
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </button>
+                            </div>
                           )}
                         </div>
                       </div>
@@ -512,7 +550,7 @@ export default function GuideView() {
             <div className="flex items-center justify-between shrink-0">
               <h3 className="text-base font-extrabold text-fuji-dark flex items-center gap-1.5">
                 <Sparkles className="w-4 h-4 text-coral" />
-                新增旅途重要指南
+                {editingItemId ? '編輯及修改指南資訊' : '新增旅途重要指南'}
               </h3>
               <button
                 type="button"
@@ -647,10 +685,10 @@ export default function GuideView() {
                   {isSubmitting ? (
                     <>
                       <span className="inline-block animate-spin rounded-full h-3.5 w-3.5 border-2 border-white/80 border-t-transparent" />
-                      <span>新增中...</span>
+                      <span>{editingItemId ? '儲存中...' : '新增中...'}</span>
                     </>
                   ) : (
-                    <span>新增此欄</span>
+                    <span>{editingItemId ? '儲存變更' : '新增此欄'}</span>
                   )}
                 </button>
               </div>
