@@ -30,7 +30,24 @@ export default function WeatherView() {
   const [spf, setSpf] = useState<number>(30); // SPF multiplier
   const [skinToneColor, setSkinToneColor] = useState<string>('light'); // sensitivity
 
-  const selectedWeather = WEATHER_FORECAST[selectedDayIndex];
+  // Generate dynamic dates starting from today in user's timezone
+  const dynamicForecast = React.useMemo(() => {
+    const daysOfWeek = ['週日', '週一', '週二', '週三', '週四', '週五', '週六'];
+    return WEATHER_FORECAST.map((item, index) => {
+      const d = new Date();
+      d.setDate(d.getDate() + index);
+      const month = String(d.getMonth() + 1).padStart(2, '0');
+      const dateStr = String(d.getDate()).padStart(2, '0');
+      
+      return {
+        ...item,
+        date: `${month}/${dateStr}`,
+        dayName: index === 0 ? '今日' : daysOfWeek[d.getDay()]
+      };
+    });
+  }, []);
+
+  const selectedWeather = dynamicForecast[selectedDayIndex];
 
   // Calculate safe exposure minutes
   // Base time: sensitive light skin gets sunburned in 10 mins under SPF-null, normal skin in 15 mins, dark skin in 25 mins.
@@ -122,7 +139,7 @@ export default function WeatherView() {
           🗓️ 澎湖多日海候預估
         </label>
         <div className="grid grid-cols-4 gap-2">
-          {WEATHER_FORECAST.map((forecast, fIdx) => {
+          {dynamicForecast.map((forecast, fIdx) => {
             const isSelected = selectedDayIndex === fIdx;
             return (
               <button

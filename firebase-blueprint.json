@@ -69,6 +69,51 @@
         }
       },
       "required": ["id", "name", "author", "likes", "likedBy", "createdAt"]
+    },
+    "custom_spots": {
+      "title": "CustomSpot",
+      "description": "Spots added from the wishlist to the shared itinerary",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique spot document ID"
+        },
+        "wishId": {
+          "type": "string",
+          "description": "Optional reference to the original wish item"
+        },
+        "dayNumber": {
+          "type": "integer",
+          "description": "The day number (1-4) this spot is scheduled on"
+        },
+        "time": {
+          "type": "string",
+          "description": "Scheduled time (e.g. 14:00)"
+        },
+        "name": {
+          "type": "string",
+          "description": "Name of the custom spot"
+        },
+        "description": {
+          "type": "string",
+          "description": "Description or notes of the custom spot"
+        },
+        "type": {
+          "type": "string",
+          "description": "The category type of the spot"
+        },
+        "gmapUrl": {
+          "type": "string",
+          "description": "Optional Google Maps search/location URL"
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "When this spot was added to the itinerary"
+        }
+      },
+      "required": ["id", "dayNumber", "time", "name", "type", "createdAt"]
     }
   },
   "firestore": {
@@ -79,6 +124,10 @@
     "/wishlist/{wishId}": {
       "schema": "wishlist",
       "description": "A collection storing travel wishes, accessible by everyone"
+    },
+    "/custom_spots/{spotId}": {
+      "schema": "custom_spots",
+      "description": "Custom spots added to the itinerary from the wishlist"
     }
   }
 }

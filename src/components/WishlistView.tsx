@@ -4,6 +4,7 @@
  */
 
 import React, { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { 
   collection, 
   onSnapshot, 
@@ -32,7 +33,9 @@ import {
   Car,
   CheckCircle,
   HelpCircle,
-  X
+  X,
+  Calendar,
+  Clock
 } from 'lucide-react';
 import { SpotType } from '../types';
 
@@ -61,6 +64,54 @@ export default function WishlistView() {
   const [notes, setNotes] = useState<string>('');
   const [submitting, setSubmitting] = useState<boolean>(false);
   const [deletingId, setDeletingId] = useState<string | null>(null);
+
+  // Add to Itinerary Modal States
+  const [addingWishToItinerary, setAddingWishToItinerary] = useState<WishItem | null>(null);
+  const [selectedDayNumber, setSelectedDayNumber] = useState<number>(1);
+  const [visitTime, setVisitTime] = useState<string>('12:00');
+  const [isAddingToItinerary, setIsAddingToItinerary] = useState<boolean>(false);
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
+  const [portalTarget, setPortalTarget] = useState<HTMLElement | null>(null);
+
+  useEffect(() => {
+    setPortalTarget(document.getElementById('app-viewport'));
+  }, []);
+
+  const handleAddToItineraryConfirm = async () => {
+    if (!addingWishToItinerary) return;
+    setIsAddingToItinerary(true);
+    setErrorText(null);
+
+    const suffix = Math.random().toString(36).substring(2, 8);
+    const customSpotId = `custom_${addingWishToItinerary.id}_${Date.now()}_${suffix}`.replace(/[^a-zA-Z0-9_\-]/g, '');
+
+    try {
+      const docRef = doc(db, 'custom_spots', customSpotId);
+      await setDoc(docRef, {
+        id: customSpotId,
+        wishId: addingWishToItinerary.id || '',
+        dayNumber: Number(selectedDayNumber),
+        time: visitTime || '12:00',
+        name: (addingWishToItinerary.name || '').substring(0, 150),
+        description: (addingWishToItinerary.notes || '').substring(0, 1000),
+        type: addingWishToItinerary.category || 'attraction',
+        gmapUrl: addingWishToItinerary.gmapUrl || `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent((addingWishToItinerary.name || '').trim())}`,
+        createdAt: serverTimestamp(),
+      });
+
+      setSuccessMessage(`已經成功將「${addingWishToItinerary.name}」排入 Day ${selectedDayNumber} 的行程囉！✨`);
+      setTimeout(() => {
+        setSuccessMessage(null);
+        setAddingWishToItinerary(null);
+      }, 2000);
+    } catch (e: any) {
+      console.error(e);
+      setErrorText("加入行程時發生錯誤，請稍後重試！");
+      handleFirestoreError(e, OperationType.WRITE, `custom_spots/${customSpotId}`);
+    } finally {
+      setIsAddingToItinerary(false);
+    }
+  };
 
   // Local state for checking who voted currently to avoid flickering
   const currentUserId = auth.currentUser?.uid || 'anonymous_user';
@@ -511,21 +562,35 @@ export default function WishlistView() {
 
                   {/* Actions Bar (Likes and Curator Delete) */}
                   <div className="flex items-center justify-between border-t border-tea/5 mt-3.5 pt-2.5 text-xs">
-                    {/* Support Button (Heart count) */}
-                    <button
-                      onClick={() => toggleLike(wish)}
-                      className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full border transition-all cursor-pointer ${
-                        hasVoted 
-                          ? 'bg-pink-500 text-white border-transparent shadow-xs font-extrabold scale-102' 
-                          : 'bg-cream text-pink-600 border-pink-300/40 hover:bg-pink-50/20'
-                      }`}
-                    >
-                      <Heart className={`w-3.5 h-3.5 ${hasVoted ? 'fill-white' : 'fill-pink-500 text-pink-500 animate-pulse'}`} />
-                      <span className="text-xs">{hasVoted ? '已熱烈投幣' : '我也想去'}</span>
-                      <span className={`px-1 rounded-md text-[10px] ${hasVoted ? 'bg-white/20' : 'bg-pink-100 text-pink-600'}`}>
-                        {wish.likes}
-                      </span>
-                    </button>
+                    <div className="flex items-center gap-2 flex-wrap">
+                      {/* Support Button (Heart count) */}
+                      <button
+                        onClick={() => toggleLike(wish)}
+                        className={`flex items-center gap-1 px-2.5 py-1.5 rounded-full border transition-all cursor-pointer ${
+                          hasVoted 
+                            ? 'bg-pink-500 text-white border-transparent shadow-xs font-extrabold' 
+                            : 'bg-cream text-pink-600 border-pink-300/40 hover:bg-pink-50/20'
+                        }`}
+                      >
+                        <Heart className={`w-3.5 h-3.5 ${hasVoted ? 'fill-white' : 'fill-pink-500 text-pink-500'}`} />
+                        <span className="text-[11px] font-bold">{hasVoted ? '想去' : '想去'}</span>
+                        <span className={`px-1.5 py-0.5 rounded text-[9px] font-mono ${hasVoted ? 'bg-white/20' : 'bg-pink-100 text-pink-600'}`}>
+                          {wish.likes}
+                        </span>
+                      </button>
+
+                      <button
+                        onClick={() => {
+                          setAddingWishToItinerary(wish);
+                          setSelectedDayNumber(1);
+                          setVisitTime('12:00');
+                        }}
+                        className="flex items-center gap-1 px-2.5 py-1.5 rounded-full bg-fuji-light hover:bg-fuji/20 text-fuji border border-fuji/15 transition-all text-[11px] font-extrabold cursor-pointer active:scale-95"
+                      >
+                        <Calendar className="w-3.5 h-3.5 text-fuji" />
+                        <span>排入行程</span>
+                      </button>
+                    </div>
 
                     <div className="flex items-center gap-2 text-tea/40 font-mono text-[9px]">
                       {/* Inline deletion confirmation */}
@@ -565,6 +630,145 @@ export default function WishlistView() {
           </div>
         )}
       </div>
+
+      {/* 🏮 Add to Itinerary Portal Modal */}
+      {portalTarget && createPortal(
+        <div className="absolute inset-0 z-50 flex items-center justify-center p-5 pointer-events-none">
+          {addingWishToItinerary && (
+            <div className="absolute inset-0 flex items-center justify-center p-5 pointer-events-auto w-full h-full">
+              {/* Backdrop */}
+              <div
+                onClick={() => {
+                  if (!isAddingToItinerary) setAddingWishToItinerary(null);
+                }}
+                className="absolute inset-0 bg-fuji-dark/30 backdrop-blur-xs transition-opacity duration-300"
+              />
+
+              {/* Modal window */}
+              <div className="relative bg-white rounded-[28px] p-5.5 shadow-2xl max-w-[340px] w-full border border-tea/10 space-y-4 z-10 animate-fade-in flex flex-col">
+                <div className="flex items-center justify-between border-b border-tea/5 pb-2.5">
+                  <div className="flex items-center gap-2">
+                    <span className="bg-fuji-light p-1.5 rounded-xl text-fuji shrink-0">
+                      <Calendar className="w-4 h-4" />
+                    </span>
+                    <h3 className="font-extrabold text-fuji-dark text-sm sm:text-base">
+                      排入澎湖回憶行程
+                    </h3>
+                  </div>
+                  <button
+                    onClick={() => setAddingWishToItinerary(null)}
+                    disabled={isAddingToItinerary}
+                    className="p-1 rounded-lg text-tea/50 hover:bg-tea/5 hover:text-tea cursor-pointer disabled:opacity-40"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
+                </div>
+
+                {successMessage ? (
+                  <div className="py-8 text-center space-y-3">
+                    <div className="w-12 h-12 rounded-full bg-emerald-50 text-emerald-500 flex items-center justify-center mx-auto border border-emerald-200 animate-bounce">
+                      <CheckCircle className="w-7 h-7" />
+                    </div>
+                    <p className="text-xs font-bold text-emerald-600 leading-relaxed max-w-[240px] mx-auto">
+                      {successMessage}
+                    </p>
+                  </div>
+                ) : (
+                  <div className="space-y-3.5 text-xs">
+                    <div>
+                      <span className="text-[10px] uppercase font-bold text-tea/60 tracking-wider">排定景點名稱</span>
+                      <p className="font-bold text-fuji-dark text-sm mt-0.5">{addingWishToItinerary.name}</p>
+                    </div>
+
+                    {/* Day select */}
+                    <div className="space-y-1.5">
+                      <span className="text-[10px] uppercase font-bold text-tea/60 tracking-wider">選擇第幾天遊玩？</span>
+                      <div className="grid grid-cols-4 gap-1.5">
+                        {[1, 2, 3, 4].map((day) => {
+                          const isSelected = selectedDayNumber === day;
+                          return (
+                            <button
+                              key={day}
+                              type="button"
+                              onClick={() => setSelectedDayNumber(day)}
+                              className={`py-2 rounded-xl text-xs font-bold transition-all border cursor-pointer ${
+                                isSelected
+                                  ? 'bg-fuji text-white border-transparent shadow-xs'
+                                  : 'bg-cream text-tea border-tea/15 hover:bg-tea/5'
+                              }`}
+                            >
+                              Day {day}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+
+                    {/* Visit Time input */}
+                    <div className="space-y-1.5">
+                      <span className="text-[10px] uppercase font-bold text-tea/60 tracking-wider">預計到達時間 (Time)</span>
+                      <div className="flex gap-2">
+                        <select
+                          value={visitTime}
+                          onChange={(e) => setVisitTime(e.target.value)}
+                          className="flex-1 bg-cream border border-tea/15 rounded-xl px-2.5 py-2 font-bold text-tea focus:outline-none focus:border-fuji/60 text-xs shadow-2xs"
+                        >
+                          <option value="08:00">08:00 (晨起)</option>
+                          <option value="09:30">09:30 (上午)</option>
+                          <option value="11:00">11:00 (午餐前)</option>
+                          <option value="12:30">12:30 (午餐後)</option>
+                          <option value="14:00">14:00 (午後)</option>
+                          <option value="15:30">15:30 (下午茶)</option>
+                          <option value="17:00">17:00 (黃昏踏浪)</option>
+                          <option value="18:30">18:30 (晚餐)</option>
+                          <option value="20:00">20:00 (夜宵/散步)</option>
+                        </select>
+                        <input
+                          type="text"
+                          value={visitTime}
+                          onChange={(e) => setVisitTime(e.target.value)}
+                          placeholder="或自訂，如 15:00"
+                          className="w-[120px] bg-cream border border-tea/15 rounded-xl px-2.5 py-2 font-bold text-tea focus:outline-none focus:border-fuji/60 text-xs shadow-2xs"
+                        />
+                      </div>
+                    </div>
+
+                    {errorText && (
+                      <div className="bg-rose-50 border border-rose-100 rounded-xl p-2.5 text-[11px] text-rose-500 font-bold">
+                        ⚠️ {errorText}
+                      </div>
+                    )}
+
+                    {/* Action buttons */}
+                    <div className="flex items-center gap-2 pt-2">
+                      <button
+                        type="button"
+                        onClick={() => setAddingWishToItinerary(null)}
+                        disabled={isAddingToItinerary}
+                        className="flex-1 py-2.5 rounded-xl border border-tea/15 hover:bg-tea/5 text-tea font-bold cursor-pointer transition-colors active:scale-95 disabled:opacity-40"
+                      >
+                        取消
+                      </button>
+                      <button
+                        type="button"
+                        onClick={handleAddToItineraryConfirm}
+                        disabled={isAddingToItinerary}
+                        className="flex-1 py-2.5 rounded-xl bg-fuji text-white font-bold cursor-pointer transition-colors hover:bg-fuji/95 active:scale-95 shadow-sm disabled:opacity-40 flex items-center justify-center gap-1.5"
+                      >
+                        {isAddingToItinerary ? (
+                          <div className="w-3.5 h-3.5 rounded-full border-2 border-white border-t-transparent animate-spin" />
+                        ) : null}
+                        確認加入
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+        </div>,
+        portalTarget
+      )}
     </div>
   );
 }

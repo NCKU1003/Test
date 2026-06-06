@@ -49,6 +49,25 @@ service cloud.firestore {
         && data.keys().size() >= 6 && data.keys().size() <= 9;
     }
 
+    function isValidCustomSpot(data) {
+      return data.id is string
+        && data.id.size() <= 64
+        && data.dayNumber is int
+        && data.dayNumber >= 1 && data.dayNumber <= 10
+        && data.time is string
+        && data.time.size() <= 10
+        && data.name is string
+        && data.name.size() <= 150
+        && (!('description' in data) || (data.description is string && data.description.size() <= 1000))
+        && data.type is string
+        && data.type.size() <= 64
+        && (!('gmapUrl' in data) || (data.gmapUrl is string && data.gmapUrl.size() <= 2000))
+        && (!('wishId' in data) || (data.wishId is string && data.wishId.size() <= 64))
+        && data.createdAt is timestamp
+        && data.keys().hasAll(['id', 'dayNumber', 'time', 'name', 'type', 'createdAt'])
+        && data.keys().size() >= 6 && data.keys().size() <= 9;
+    }
+
     // Shared Photos Rules
     match /shared_photos/{photoId} {
       allow get: if true;
@@ -87,6 +106,24 @@ service cloud.firestore {
           ||
           incoming().diff(existing()).affectedKeys().hasOnly(['name', 'notes', 'category', 'gmapUrl'])
         );
+        
+      allow delete: if true;
+    }
+
+    // Custom Spots Rules
+    match /custom_spots/{spotId} {
+      allow get: if true;
+      allow list: if true;
+      
+      allow create: if isValidId(spotId)
+        && incoming().id == spotId
+        && isValidCustomSpot(incoming())
+        && incoming().createdAt == request.time;
+        
+      allow update: if isValidId(spotId)
+        && incoming().id == existing().id
+        && isValidCustomSpot(incoming())
+        && incoming().createdAt == existing().createdAt;
         
       allow delete: if true;
     }

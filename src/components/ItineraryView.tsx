@@ -44,6 +44,7 @@ export default function ItineraryView() {
   const [uploadProgressId, setUploadProgressId] = useState<string | null>(null);
   const [photoToDelete, setPhotoToDelete] = useState<string | null>(null);
   const [portalTarget, setPortalTarget] = useState<HTMLElement | null>(null);
+  const [customSpots, setCustomSpots] = useState<any[]>([]);
 
   useEffect(() => {
     setPortalTarget(document.getElementById('app-viewport'));
@@ -59,7 +60,43 @@ export default function ItineraryView() {
     }
   });
 
-  // Fetch from Cloud in Real-time
+  // Fetch Custom Itinerary Spots in real-time
+  useEffect(() => {
+    const path = 'custom_spots';
+    const unsubscribe = onSnapshot(collection(db, path), (snapshot) => {
+      const spots: any[] = [];
+      snapshot.forEach((snapshotDoc) => {
+        const data = snapshotDoc.data();
+        if (data) {
+          spots.push({
+            id: data.id,
+            time: data.time || "12:00",
+            name: data.name || "",
+            description: data.description || "",
+            type: data.type || "attraction",
+            highlights: ["✨ 許願點", "客製行程"],
+            gmapUrl: data.gmapUrl || `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(data.name || "")}`,
+            parkingAndGasInfo: {
+              parking: "此為客製許願景點，可以直接點按下方「開啟導航」前往停泊。",
+              gas: "本島裝備與跳島中油加油站請提早規劃，注意安全！"
+            },
+            photoTip: "這是你們共同許願並加入的客製排定景點！期待你們攜手在這裡拍下滿載幸福的合照 📸",
+            photoPlaceholder: "https://images.unsplash.com/photo-1544735716-392fe2489ffa?auto=format&fit=crop&w=800&q=80",
+            dayNumber: data.dayNumber || 1,
+            isCustom: true
+          });
+        }
+      });
+      setCustomSpots(spots);
+    }, (error) => {
+      console.error("Custom spots sync error:", error);
+      handleFirestoreError(error, OperationType.GET, path);
+    });
+
+    return () => unsubscribe();
+  }, []);
+
+  // Fetch Shared Photos from Cloud in Real-time
   useEffect(() => {
     const path = 'shared_photos';
     setIsCloudSyncing(true);
@@ -91,7 +128,22 @@ export default function ItineraryView() {
     return () => unsubscribe();
   }, []);
 
+  const handleRemoveCustomSpot = async (spotId: string) => {
+    try {
+      await deleteDoc(doc(db, 'custom_spots', spotId));
+    } catch (error) {
+      console.error("Failed to remove custom spot:", error);
+      handleFirestoreError(error, OperationType.DELETE, `custom_spots/${spotId}`);
+    }
+  };
+
   const activeDayData = ITINERARY_DATA.find(d => d.dayNumber === selectedDay) || ITINERARY_DATA[0];
+
+  // Merge static spots with custom spots for active day, sorted chronologically by time
+  const currentDayCustomSpots = customSpots.filter(s => s.dayNumber === selectedDay);
+  const combinedDaySpots = [...activeDayData.spots, ...currentDayCustomSpots].sort((a, b) => {
+    return a.time.localeCompare(b.time);
+  });
 
   // Client-side quick compression to ensure image is fast & fits in Firestore document easily (<300KB)
   const compressImage = (file: File): Promise<string> => {
@@ -200,6 +252,13 @@ export default function ItineraryView() {
           dayNumber: day.dayNumber
         };
       }
+    }
+    const foundCustom = customSpots.find(s => s.id === spotId);
+    if (foundCustom) {
+      return {
+        name: foundCustom.name,
+        dayNumber: foundCustom.dayNumber
+      };
     }
     return { name: "未知景點", dayNumber: 1 };
   };
@@ -375,7 +434,7 @@ export default function ItineraryView() {
 
       {/* 🟠 Spots List */}
       <div className="space-y-5">
-        {activeDayData.spots.map((spot, index) => {
+        {combinedDaySpots.map((spot: any, index) => {
           const category = getCategoryBadge(spot.type);
           const spotPhotos = (Object.values(uploadedPhotos) as SharedPhoto[]).filter((p: SharedPhoto) => p.spotId === spot.id);
           const hasUserPhotos = spotPhotos.length > 0;
@@ -402,7 +461,7 @@ export default function ItineraryView() {
                   </div>
                   {/* Local Highlights */}
                   <div className="flex gap-1.5">
-                    {spot.highlights.map((tag) => (
+                    {spot.highlights.map((tag: string) => (
                       <span
                         key={tag}
                         className={`text-[10px] font-bold py-0.5 px-2 rounded-lg ${getHighlightBadgeClass(tag)}`}
@@ -415,8 +474,29 @@ export default function ItineraryView() {
 
                 {/* Spot Name & Description */}
                 <div>
-                  <h3 className="text-lg font-bold text-fuji-dark flex items-center gap-1.5">
-                    {spot.name}
+                  <h3 className="text-lg font-bold text-fuji-dark flex items-center justify-between gap-1.5 flex-wrap">
+                    <span className="flex items-center gap-1.5">
+                      {spot.name}
+                      {spot.isCustom && (
+                        <span className="bg-pink-100 text-pink-600 border border-pink-200 text-[10px] font-extrabold px-1.5 py-0.5 rounded-lg flex items-center gap-0.5 animate-pulse">
+                          🏮 許願排定
+                        </span>
+                      )}
+                    </span>
+                    {spot.isCustom && (
+                      <button
+                        onClick={() => {
+                          if (confirm(`確定要把自訂景點「${spot.name}」從 Day ${selectedDay} 的行程中移除嗎？`)) {
+                            handleRemoveCustomSpot(spot.id);
+                          }
+                        }}
+                        className="text-[10px] font-bold text-rose-500 hover:text-rose-600 flex items-center gap-1 bg-rose-50 hover:bg-rose-100 border border-rose-200 px-2 py-1 rounded-lg transition-all active:scale-95 cursor-pointer shrink-0"
+                        title="從行程移除此許願景點"
+                      >
+                        <Trash2 className="w-3.5 h-3.5 text-rose-500" />
+                        <span>移除</span>
+                      </button>
+                    )}
                   </h3>
                   <p className="text-sm text-tea/90 mt-1.5 leading-relaxed">
                     {spot.description}
