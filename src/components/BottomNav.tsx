@@ -4,9 +4,9 @@
  */
 
 import React from 'react';
-import { Map, BookOpen, Sun, Waves } from 'lucide-react';
+import { Map, BookOpen, Sun, Waves, Sparkles } from 'lucide-react';
 
-export type TabType = 'itinerary' | 'guide' | 'weather';
+export type TabType = 'itinerary' | 'guide' | 'weather' | 'wishlist';
 
 interface BottomNavProps {
   activeTab: TabType;
@@ -33,10 +33,16 @@ export default function BottomNav({ activeTab, setActiveTab }: BottomNavProps) {
       icon: Sun,
       color: 'bg-amber-500/10 text-amber-600',
     },
+    {
+      id: 'wishlist' as TabType,
+      label: '許願 Wish',
+      icon: Sparkles,
+      color: 'bg-pink-500/10 text-pink-600',
+    },
   ];
 
   return (
-    <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 w-[92%] max-w-[440px] px-2 py-2 bg-cream/75 backdrop-blur-xl border border-tea/10 rounded-[28px] shadow-[0_12px_40px_-12px_rgba(59,122,158,0.25)] flex items-center justify-around transition-all duration-300">
+    <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 w-[95%] max-w-[450px] px-2 py-1.5 bg-cream/75 backdrop-blur-xl border border-tea/10 rounded-[28px] shadow-[0_12px_40px_-12px_rgba(59,122,158,0.25)] flex items-center justify-around transition-all duration-300">
       {navItems.map((item) => {
         const Icon = item.icon;
         const isActive = activeTab === item.id;
@@ -46,15 +52,15 @@ export default function BottomNav({ activeTab, setActiveTab }: BottomNavProps) {
             key={item.id}
             onClick={() => setActiveTab(item.id)}
             id={`nav-btn-${item.id}`}
-            className={`flex flex-col items-center justify-center py-2.5 px-4 rounded-[20px] transition-all duration-300 relative cursor-pointer ${
+            className={`flex flex-col items-center justify-center py-2 px-3 rounded-[20px] transition-all duration-300 relative cursor-pointer ${
               isActive 
-                ? 'bg-fuji text-white shadow-[0_5px_15px_-3px_rgba(59,122,158,0.4)] scale-105 font-bold' 
+                ? 'bg-fuji text-white shadow-[0_5px_15px_-3px_rgba(59,122,158,0.4)] scale-102 font-bold' 
                 : 'text-tea hover:text-fuji hover:bg-fuji-light/50'
             }`}
           >
-            <div className="flex items-center gap-1.5">
-              <Icon className={`w-5 h-5 ${isActive ? 'scale-110' : ''}`} />
-              <span className="text-xs tracking-wide">
+            <div className="flex items-center gap-1">
+              <Icon className={`w-4 h-4 ${isActive ? 'scale-110 text-white' : ''}`} />
+              <span className="text-[11px] tracking-wide">
                 {item.label.split(' ')[0]}
               </span>
             </div>

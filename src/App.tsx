@@ -14,6 +14,7 @@ import BottomNav, { TabType } from './components/BottomNav';
 import ItineraryView from './components/ItineraryView';
 import GuideView from './components/GuideView';
 import WeatherView from './components/WeatherView';
+import WishlistView from './components/WishlistView';
 import { Waves } from 'lucide-react';
 
 export default function App() {
@@ -27,13 +28,15 @@ export default function App() {
         return <GuideView key="guide" />;
       case 'weather':
         return <WeatherView key="weather" />;
+      case 'wishlist':
+        return <WishlistView key="wishlist" />;
       default:
         return <ItineraryView key="itinerary" />;
     }
   };
 
   return (
-    <div className="fixed inset-0 md:relative md:inset-auto h-full md:h-auto md:min-h-screen bg-mugi py-0 md:py-8 flex flex-col justify-center items-center overflow-hidden md:overflow-x-hidden antialiased">
+    <div className="min-h-screen w-full bg-mugi py-0 md:py-8 flex flex-col justify-center items-center relative overflow-hidden antialiased">
       {/* Wave pattern decorative background for desktop viewports */}
       <div className="fixed inset-0 opacity-15 wave-texture pointer-events-none hidden md:block" />
 

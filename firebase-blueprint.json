@@ -24,12 +24,61 @@
         }
       },
       "required": ["id", "spotId", "photoData", "uploadedAt"]
+    },
+    "wishlist": {
+      "title": "WishItem",
+      "description": "Places suggested by users that they wish to visit",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Document ID"
+        },
+        "name": {
+          "type": "string",
+          "description": "Name of the requested spot"
+        },
+        "notes": {
+          "type": "string",
+          "description": "Notes on why they want to visit"
+        },
+        "category": {
+          "type": "string",
+          "description": "Category of the spot"
+        },
+        "author": {
+          "type": "string",
+          "description": "Name of the person making the wish"
+        },
+        "likes": {
+          "type": "integer",
+          "description": "Total upvotes/likes"
+        },
+        "likedBy": {
+          "type": "array",
+          "description": "List of user UIDs who upvoted"
+        },
+        "gmapUrl": {
+          "type": "string",
+          "description": "Google Maps query URL"
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Timestamp of creation"
+        }
+      },
+      "required": ["id", "name", "author", "likes", "likedBy", "createdAt"]
     }
   },
   "firestore": {
     "/shared_photos/{photoId}": {
       "schema": "shared_photos",
       "description": "Shared travel memories collection, keyed by spotId"
+    },
+    "/wishlist/{wishId}": {
+      "schema": "wishlist",
+      "description": "A collection storing travel wishes, accessible by everyone"
     }
   }
 }

@@ -32,6 +32,23 @@ service cloud.firestore {
         && data.keys().size() == 4;
     }
 
+    function isValidWishItem(data) {
+      return data.id is string
+        && data.id.size() <= 64
+        && data.name is string
+        && data.name.size() <= 150
+        && (!('notes' in data) || (data.notes is string && data.notes.size() <= 1000))
+        && (!('category' in data) || (data.category is string && data.category.size() <= 64))
+        && data.author is string
+        && data.author.size() <= 64
+        && data.likes is int
+        && data.likedBy is list
+        && (!('gmapUrl' in data) || (data.gmapUrl is string && data.gmapUrl.size() <= 2000))
+        && data.createdAt is timestamp
+        && data.keys().hasAll(['id', 'name', 'author', 'likes', 'likedBy', 'createdAt'])
+        && data.keys().size() >= 6 && data.keys().size() <= 9;
+    }
+
     // Shared Photos Rules
     match /shared_photos/{photoId} {
       allow get: if true;
@@ -50,6 +67,28 @@ service cloud.firestore {
         && incoming().uploadedAt == request.time;
         
       allow delete: if isValidId(photoId);
+    }
+
+    // Wishlist Rules
+    match /wishlist/{wishId} {
+      allow get: if true;
+      allow list: if true;
+      
+      allow create: if isValidId(wishId)
+        && incoming().id == wishId
+        && isValidWishItem(incoming())
+        && incoming().createdAt == request.time;
+        
+      allow update: if isValidId(wishId)
+        && incoming().id == existing().id
+        && isValidWishItem(incoming())
+        && (
+          incoming().diff(existing()).affectedKeys().hasOnly(['likes', 'likedBy'])
+          ||
+          incoming().diff(existing()).affectedKeys().hasOnly(['name', 'notes', 'category', 'gmapUrl'])
+        );
+        
+      allow delete: if true;
     }
   }
 }
