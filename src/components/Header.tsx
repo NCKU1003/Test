@@ -45,7 +45,7 @@ export default function Header() {
   }, []);
 
   const getDaysTogether = () => {
-    const start = new Date('2026-04-28T00:00:00');
+    const start = new Date('2026-05-20T00:00:00');
     const today = new Date();
     const startMidnight = new Date(start.getFullYear(), start.getMonth(), start.getDate());
     const todayMidnight = new Date(today.getFullYear(), today.getMonth(), today.getDate());
@@ -162,9 +162,9 @@ export default function Header() {
                     <span>均</span>
                   </p>
                   <div className="mt-3 bg-pink-50/50 rounded-2xl border border-pink-200/30 p-3">
-                    <p className="text-xs text-tea font-bold">勒索關係的那天</p>
+                    <p className="text-xs text-tea font-bold">520❤️</p>
                     <p className="text-sm font-extrabold text-pink-600 mt-0.5 flex items-center justify-center gap-1">
-                      <Calendar className="w-3.5 h-3.5" /> 2026 年 4 月 28 日
+                      <Calendar className="w-3.5 h-3.5" /> 2026 年 5 月 20 日
                     </p>
                   </div>
                 </div>
